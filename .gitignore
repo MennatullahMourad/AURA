@@ -1,9 +1,14 @@
 aura/
-__pycache__/
-*.pyc
-*.pyo
-web/tmp/
-web/aura.db
 Results/
 *.pth
 *.pkl
+*.db
+*.csv
+*.xls
+*.xlsx
+web/tmp/
+__pycache__/
+lightning_logs/
+behavioral data/
+Eye-Tracking Dataset/
+Videos/
