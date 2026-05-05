@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AURA — Questionnaire</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Nunito:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --purple-deep:  #1a0533;
+  --purple-dark:  #2d0a5e;
+  --purple-mid:   #4a1a8a;
+  --purple-light: #7b3fc4;
+  --gold:         #f5a623;
+  --gold-light:   #ffd07a;
+  --pink:         #e91e8c;
+  --white:        #ffffff;
+  --white-soft:   rgba(255,255,255,0.85);
+  --white-muted:  rgba(255,255,255,0.45);
+  --card-bg:      rgba(255,255,255,0.06);
+  --card-border:  rgba(255,255,255,0.12);
+  --sidebar-w:    260px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Nunito',sans-serif; background:var(--purple-deep); color:var(--white); display:flex; min-height:100vh; }
+
+/* SIDEBAR */
+.sidebar {
+  width: var(--sidebar-w);
+  background: rgba(255,255,255,0.04);
+  border-right: 1px solid var(--card-border);
+  display: flex; flex-direction: column;
+  padding: 2rem 1.25rem;
+  position: fixed; top:0; left:0; height:100vh;
+  backdrop-filter: blur(10px); z-index:100;
+}
+.sidebar-logo { display:flex; align-items:center; gap:.75rem; margin-bottom:2.5rem; padding:0 .5rem; }
+.sidebar-logo .icon { width:40px; height:40px; border-radius:50%; background:linear-gradient(135deg,var(--purple-mid),var(--pink)); display:flex; align-items:center; justify-content:center; font-size:1.1rem; }
+.sidebar-logo .name { font-family:'Playfair Display',serif; font-size:1.4rem; font-weight:800; }
+.sidebar-logo .name span { color:var(--gold); }
+.nav-section-label { font-size:.65rem; font-weight:700; color:var(--white-muted); letter-spacing:.2em; text-transform:uppercase; padding:0 .75rem; margin-bottom:.5rem; margin-top:1.5rem; }
+.nav-item { display:flex; align-items:center; gap:.75rem; padding:.75rem; border-radius:10px; cursor:pointer; color:var(--white-muted); font-size:.9rem; font-weight:500; text-decoration:none; transition:all .2s; margin-bottom:.25rem; }
+.nav-item:hover { background:var(--card-bg); color:var(--white); }
+.nav-item.active { background:linear-gradient(135deg,rgba(74,26,138,.6),rgba(233,30,140,.3)); color:var(--white); border:1px solid rgba(233,30,140,.3); }
+.nav-icon { font-size:1.1rem; width:24px; text-align:center; }
+.sidebar-bottom { margin-top:auto; border-top:1px solid var(--card-border); padding-top:1.25rem; }
+.user-card { display:flex; align-items:center; gap:.75rem; padding:.75rem; background:var(--card-bg); border-radius:10px; }
+.user-avatar { width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,var(--purple-mid),var(--pink)); display:flex; align-items:center; justify-content:center; font-size:.9rem; }
+.user-name { font-size:.85rem; font-weight:600; }
+.user-role { font-size:.72rem; color:var(--white-muted); }
+
+/* MAIN */
+.main { margin-left:var(--sidebar-w); flex:1; padding:2rem 2.5rem; }
+
+.page-header { margin-bottom:2rem; }
+.page-header h1 { font-family:'Playfair Display',serif; font-size:1.8rem; font-weight:700; }
+.page-header p { color:var(--white-muted); font-size:.9rem; margin-top:.4rem; }
+
+/* TYPE SELECTOR */
+.type-selector {
+  display:grid; grid-template-columns:1fr 1fr;
+  gap:1.25rem; margin-bottom:2rem;
+}
+.type-card {
+  background:var(--card-bg); border:2px solid var(--card-border);
+  border-radius:16px; padding:1.5rem;
+  cursor:pointer; transition:all .25s; text-align:center;
+}
+.type-card:hover { border-color:var(--purple-light); }
+.type-card.selected {
+  border-color:var(--pink);
+  background:linear-gradient(135deg,rgba(74,26,138,.3),rgba(233,30,140,.15));
+}
+.type-card .type-icon { font-size:2.5rem; margin-bottom:.75rem; }
+.type-card .type-name { font-family:'Playfair Display',serif; font-size:1.2rem; font-weight:700; }
+.type-card .type-age { font-size:.8rem; color:var(--white-muted); margin-top:.3rem; }
+.type-card .type-desc { font-size:.78rem; color:var(--white-muted); margin-top:.5rem; line-height:1.5; }
+
+/* PROGRESS BAR */
+.progress-wrap { margin-bottom:2rem; }
+.progress-info { display:flex; justify-content:space-between; font-size:.8rem; color:var(--white-muted); margin-bottom:.5rem; }
+.progress-bar { height:6px; background:rgba(255,255,255,.1); border-radius:999px; overflow:hidden; }
+.progress-fill { height:100%; background:linear-gradient(90deg,var(--purple-light),var(--pink)); border-radius:999px; transition:width .4s ease; }
+
+/* QUESTION CARD */
+.question-card {
+  background:var(--card-bg); border:1px solid var(--card-border);
+  border-radius:20px; padding:2rem;
+  margin-bottom:1.5rem;
+  display:none;
+}
+.question-card.active { display:block; animation:fadeIn .3s ease; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+.q-number {
+  font-size:.72rem; font-weight:700; letter-spacing:.2em;
+  text-transform:uppercase; color:var(--pink); margin-bottom:.75rem;
+}
+.q-text { font-size:1.1rem; font-weight:600; line-height:1.6; margin-bottom:1.5rem; }
+.q-text-ar { font-size:.9rem; color:var(--white-muted); margin-top:.3rem; direction:rtl; }
+
+/* OPTIONS */
+.options-grid { display:flex; flex-direction:column; gap:.75rem; }
+.option-btn {
+  padding:.85rem 1.25rem;
+  background:rgba(255,255,255,.05);
+  border:1px solid var(--card-border);
+  border-radius:12px; cursor:pointer;
+  font-family:'Nunito',sans-serif;
+  font-size:.9rem; color:var(--white-soft);
+  text-align:left; transition:all .2s;
+}
+.option-btn:hover { background:rgba(255,255,255,.1); border-color:var(--purple-light); }
+.option-btn.selected {
+  background:linear-gradient(135deg,rgba(74,26,138,.5),rgba(233,30,140,.3));
+  border-color:var(--pink); color:var(--white);
+}
+
+/* binary options */
+.binary-options { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+.binary-btn {
+  padding:1.25rem; text-align:center;
+  background:rgba(255,255,255,.05);
+  border:2px solid var(--card-border);
+  border-radius:14px; cursor:pointer;
+  font-family:'Nunito',sans-serif;
+  font-size:1rem; font-weight:600; color:var(--white-soft);
+  transition:all .2s;
+}
+.binary-btn:hover { transform:translateY(-2px); }
+.binary-btn.agree   { border-color:rgba(0,200,100,.3); }
+.binary-btn.disagree{ border-color:rgba(233,30,140,.3); }
+.binary-btn.selected-agree    { background:rgba(0,200,100,.2);  border-color:#7fffc0; color:#7fffc0; }
+.binary-btn.selected-disagree { background:rgba(233,30,140,.2); border-color:var(--pink); color:var(--pink); }
+
+/* NAV BUTTONS */
+.nav-buttons { display:flex; gap:1rem; margin-top:1.5rem; }
+.btn-back {
+  padding:.85rem 2rem;
+  background:rgba(255,255,255,.07); border:1px solid var(--card-border);
+  border-radius:12px; cursor:pointer;
+  font-family:'Nunito',sans-serif; font-size:.9rem; font-weight:600;
+  color:var(--white-muted); transition:all .2s;
+}
+.btn-back:hover { background:rgba(255,255,255,.12); color:var(--white); }
+.btn-next {
+  flex:1; padding:.85rem;
+  background:linear-gradient(135deg,var(--purple-mid),var(--pink));
+  border:none; border-radius:12px; cursor:pointer;
+  font-family:'Nunito',sans-serif; font-size:.95rem; font-weight:700;
+  color:var(--white); transition:all .2s;
+  box-shadow:0 6px 20px rgba(233,30,140,.3);
+}
+.btn-next:hover { transform:translateY(-2px); box-shadow:0 10px 30px rgba(233,30,140,.4); }
+.btn-next:disabled { opacity:.4; cursor:not-allowed; transform:none; }
+
+/* SCORE RESULT */
+.score-card {
+  background:linear-gradient(135deg,rgba(74,26,138,.5),rgba(233,30,140,.2));
+  border:1px solid rgba(233,30,140,.3);
+  border-radius:20px; padding:2.5rem; text-align:center;
+  display:none;
+}
+.score-card.show { display:block; animation:fadeIn .4s ease; }
+.score-num { font-family:'Playfair Display',serif; font-size:5rem; font-weight:800; color:var(--gold); line-height:1; }
+.score-label { font-size:1.1rem; color:var(--white-muted); margin-top:.5rem; }
+.score-risk { font-size:1.3rem; font-weight:700; margin-top:1rem; }
+.btn-continue {
+  display:inline-block; margin-top:2rem;
+  padding:1rem 2.5rem;
+  background:linear-gradient(135deg,var(--purple-mid),var(--pink));
+  border:none; border-radius:12px; cursor:pointer;
+  font-family:'Nunito',sans-serif; font-size:1rem; font-weight:700;
+  color:var(--white); text-decoration:none;
+  box-shadow:0 6px 20px rgba(233,30,140,.3);
+  transition:all .2s;
+}
+.btn-continue:hover { transform:translateY(-2px); }
+
+/* Logout button in sidebar */
+.btn-logout {
+  display: flex; align-items: center; gap: .6rem;
+  width: 100%;
+  background: rgba(233,30,140,.1);
+  border: 1px solid rgba(233,30,140,.25);
+  border-radius: 10px;
+  padding: .65rem 1rem;
+  font-family: 'Nunito', sans-serif;
+  font-size: .82rem; font-weight: 600;
+  color: rgba(255,130,180,.9);
+  cursor: pointer; text-decoration: none;
+  transition: all .2s;
+  margin-top: .5rem;
+}
+.btn-logout:hover {
+  background: rgba(233,30,140,.2);
+  color: #fff;
+  border-color: rgba(233,30,140,.5);
+}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="icon">👁</div>
+    <div class="name">AU<span>RA</span></div>
+  </div>
+  <div class="nav-section-label">Main</div>
+  <a href="/dashboard" class="nav-item"><span class="nav-icon">🏠</span> Dashboard</a>
+  <a href="/questionnaire" class="nav-item active"><span class="nav-icon">📋</span> Questionnaire</a>
+  <a href="/eye-tracking" class="nav-item"><span class="nav-icon">👁</span> Eye Tracking</a>
+  <a href="/results" class="nav-item"><span class="nav-icon">📊</span> Results</a>
+  <div class="nav-section-label">Support</div>
+  <a href="/chatbot" class="nav-item"><span class="nav-icon">🤖</span> AI Assistant</a>
+  <div class="sidebar-bottom">
+    <div class="user-card">
+      <div class="user-avatar">👩</div>
+      <div><div class="user-name">{{ user.first_name }} {{ user.last_name }}</div><div class="user-role">Parent Account</div></div>
+    </div>
+    <a href="/logout" class="btn-logout">
+      <span>🚪</span> Log Out
+    </a>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="page-header">
+    <h1>📋 Behavioral Questionnaire</h1>
+    <p>Answer all questions honestly based on your child's typical behavior</p>
+  </div>
+
+  <!-- Type Selector -->
+  <div id="type-selector" class="type-selector">
+    <div class="type-card selected" onclick="selectType('qchat')">
+      <div class="type-icon">🧒</div>
+      <div class="type-name">Q-CHAT-10</div>
+      <div class="type-age">For children under 4 years</div>
+      <div class="type-desc">Early screening tool based on frequency of autistic behaviors</div>
+    </div>
+    <div class="type-card" onclick="selectType('aq10')">
+      <div class="type-icon">👦</div>
+      <div class="type-name">AQ-10</div>
+      <div class="type-age">For children 4 years and older</div>
+      <div class="type-desc">Autism Spectrum Quotient — agree/disagree format</div>
+    </div>
+  </div>
+
+  <div id="start-btn-wrap" style="margin-bottom:2rem;">
+    <button class="btn-next" onclick="startQuestionnaire()" style="max-width:300px;">
+      Start Questionnaire →
+    </button>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-wrap" id="progress-wrap" style="display:none;">
+    <div class="progress-info">
+      <span id="progress-text">Question 1 of 10</span>
+      <span id="progress-pct">10%</span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progress-fill" style="width:10%"></div>
+    </div>
+  </div>
+
+  <!-- Q-CHAT Questions -->
+  <div id="qchat-questions" style="display:none;">
+
+    <div class="question-card active" data-q="0">
+      <div class="q-number">Question 1 / 10 — Q-CHAT-10</div>
+      <div class="q-text">Does your child look at you when you call his/her name?
+        <div class="q-text-ar">لما بتناديه باسمه بيبص عليك؟</div>
+      </div>
+      <div class="options-grid">
+        <button class="option-btn" onclick="selectOption(this,0,0)">Always / Usually</button>
+        <button class="option-btn" onclick="selectOption(this,0,1)">Sometimes / Rarely / Never</button>
+      </div>
+    </div>
+
+    <div class="question-card" data-q="1">
+      <div class="q-number">Question 2 / 10 — Q-CHAT-10</div>
+      <div class="q-text">How easy is it for you to make eye contact with your child?
+        <div class="q-text-ar">سهل تعمل eye contact معاه؟</div>
+      </div>
+      <div class="options-grid">
+        <button class="option-btn" onclick="selectOption(this,1,0)">Very easy / Quite easy</button>
+        <button class="option-btn" onclick="selectOption(this,1,1)">Quite difficult / Very difficult / Impossible</button>
+      </div>
+    </div>
+
+    <div class="question-card" data-q="2">
+      <div class="q-number">Question 3 / 10 — Q-CHAT-10</div>
+      <div class="q-text">Does your child point to indicate that he/she wants something?
+        <div class="q-text-ar">بيشاور بإصبعه إنه عايز حاجة؟</div>
+      </div>
+      <div class="options-grid">
+        <button class="option-btn" onclick="selectOption(this,2,0)">Many / Few times a day</button>
+        <button class="option-btn" onclick="selectOption(this,2,1)">Few times a week / Less than once / Never</button>
+      </div>
+    </div>
+
+    <div class="question-card" data-q="3">
+      <div class="q-number">Question 4 / 10 — Q-CHAT-10</div>
+      <div class="q-text">Does your child point to share interest with you?
+        <div class="q-text-ar">بيشاور عشان يشاركك اهتمامه؟</div>
+      </div>
+      <div class="options-grid">
+        <button class="option-btn" onclick="selectOption(this,3,0)">Many / Few times a day</button>
+        <button class="option-btn" onclick="selectOption(this,3,1)">Few times a week / Less than once / Never</button>
+      </div>
+    </div>
+
+    <div class="question-card" data-q="4">
+      <div class="q-number">Question 5 / 10 — Q-CHAT-10</div>
+      <div class="q-text">Does your child pretend play?
+        <div class="q-text-ar">بيتظاهر ويلعب لعب تخيلي؟</div>
+      </div>
+      <div class="options-grid">
+        <button class="option-btn" onclick="selectOption(this,4,0)">Many / Few times a day</button>
+        <button class="option-btn" onclick="selectOption(this,4,1)">Few times a week / Less than once / Never</button>
+      </div>
+    </div>
+
+    <div class="question-card" data-q="5">
+      <div class="q-number">Question 6 / 10 — Q-CHAT-10</div>
+      <div class="q-text">Does your child follow your gaze when you look at something?
+        <div class="q-text-ar">بيتابع نظرتك لما بتبص لحاجة؟</div>
+      </div>
+      <div class="options-grid">
+        <button class="option-btn" onclick="selectOption(this,5,0)">Many / Few times a day</button>
+        <button class="option-btn" onclick="selectOption(this,5,1)">Few times a week / Less than once / Never</button>
+      </div>
+    </div>
+
+    <div class="question-card" data-q="6">
+      <div class="q-number">Question 7 / 10 — Q-CHAT-10</div>
+      <div class="q-text">If someone is upset, does your child try to comfort them?
+        <div class="q-text-ar">لما حد زعلان بيحاول يعزيه؟</div>
+      </div>
+      <div class="options-grid">
+        <button class="option-btn" onclick="selectOption(this,6,0)">Always / Usually</button>
+        <button class="option-btn" onclick="selectOption(this,6,1)">Sometimes / Rarely / Never</button>
+      </div>
+    </div>
+
+    <div class="question-card" data-q="7">
+      <div class="q-number">Question 8 / 10 — Q-CHAT-10</div>
+      <div class="q-text">How would you describe your child's first words?
+        <div class="q-text-ar">أول كلامه كان طبيعي؟</div>
+      </div>
+      <div class="options-grid">
+        <button class="option-btn" onclick="selectOption(this,7,0)">Very / Quite typical</button>
+        <button class="option-btn" onclick="selectOption(this,7,1)">Slightly unusual / Very unusual / Doesn't speak</button>
+      </div>
+    </div>
+
+    <div class="question-card" data-q="8">
+      <div class="q-number">Question 9 / 10 — Q-CHAT-10</div>
+      <div class="q-text">Does your child use gestures (e.g. wave bye)?
+        <div class="q-text-ar">بيستخدم gestures زي bye؟</div>
+      </div>
+      <div class="options-grid">
+        <button class="option-btn" onclick="selectOption(this,8,0)">Many / Few times a day</button>
+        <button class="option-btn" onclick="selectOption(this,8,1)">Few times a week / Less than once / Never</button>
+      </div>
+    </div>
+
+    <div class="question-card" data-q="9">
+      <div class="q-number">Question 10 / 10 — Q-CHAT-10</div>
+      <div class="q-text">Does your child stare at nothing with no apparent purpose?
+        <div class="q-text-ar">بيبص في الفراغ من غير سبب؟</div>
+      </div>
+      <div class="options-grid">
+        <button class="option-btn" onclick="selectOption(this,9,0)">Many / Few times a day</button>
+        <button class="option-btn" onclick="selectOption(this,9,1)">Less than once / Never</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- AQ-10 Questions -->
+  <div id="aq10-questions" style="display:none;">
+
+    <div class="question-card active" data-q="0">
+      <div class="q-number">Question 1 / 10 — AQ-10</div>
+      <div class="q-text">S/he notices small sounds when others do not.
+        <div class="q-text-ar">بيلاحظ أصوات صغيرة مش بيلاحظها غيره</div>
+      </div>
+      <div class="binary-options">
+        <button class="binary-btn agree"    onclick="selectBinary(this,0,1)">Agree</button>
+        <button class="binary-btn disagree" onclick="selectBinary(this,0,0)">Disagree</button>
+      </div>
+    </div>
+
+    <div class="question-card" data-q="1">
+      <div class="q-number">Question 2 / 10 — AQ-10</div>
+      <div class="q-text">S/he usually concentrates more on the whole picture rather than the small details.
+        <div class="q-text-ar">بيركز على الصورة الكاملة مش التفاصيل</div>
+      </div>
+      <div class="binary-options">
+        <button class="binary-btn agree"    onclick="selectBinary(this,1,0)">Agree</button>
+        <button class="binary-btn disagree" onclick="selectBinary(this,1,1)">Disagree</button>
+      </div>
+    </div>
+
+    <div class="question-card" data-q="2">
+      <div class="q-number">Question 3 / 10 — AQ-10</div>
+      <div class="q-text">In a social group, s/he can easily keep track of several different conversations.
+        <div class="q-text-ar">في المجموعة بيقدر يتابع أكتر من محادثة</div>
+      </div>
+      <div class="binary-options">
+        <button class="binary-btn agree"    onclick="selectBinary(this,2,0)">Agree</button>
+        <button class="binary-btn disagree" onclick="selectBinary(this,2,1)">Disagree</button>
+      </div>
+    </div>
+
+    <div class="question-card" data-q="3">
+      <div class="q-number">Question 4 / 10 — AQ-10</div>
+      <div class="q-text">S/he finds it easy to go back and forth between different activities.
+        <div class="q-text-ar">بيتنقل بسهولة بين الأنشطة</div>
+      </div>
+      <div class="binary-options">
+        <button class="binary-btn agree"    onclick="selectBinary(this,3,0)">Agree</button>
+        <button class="binary-btn disagree" onclick="selectBinary(this,3,1)">Disagree</button>
+      </div>
+    </div>
+
+    <div class="question-card" data-q="4">
+      <div class="q-number">Question 5 / 10 — AQ-10</div>
+      <div class="q-text">S/he doesn't know how to keep a conversation going with his/her peers.
+        <div class="q-text-ar">مش عارف يكمل محادثة مع أقرانه</div>
+      </div>
+      <div class="binary-options">
+        <button class="binary-btn agree"    onclick="selectBinary(this,4,1)">Agree</button>
+        <button class="binary-btn disagree" onclick="selectBinary(this,4,0)">Disagree</button>
+      </div>
+    </div>
+
+    <div class="question-card" data-q="5">
+      <div class="q-number">Question 6 / 10 — AQ-10</div>
+      <div class="q-text">S/he is good at social chit-chat.
+        <div class="q-text-ar">كويس في الكلام الاجتماعي العادي</div>
+      </div>
+      <div class="binary-options">
+        <button class="binary-btn agree"    onclick="selectBinary(this,5,0)">Agree</button>
+        <button class="binary-btn disagree" onclick="selectBinary(this,5,1)">Disagree</button>
+      </div>
+    </div>
+
+    <div class="question-card" data-q="6">
+      <div class="q-number">Question 7 / 10 — AQ-10</div>
+      <div class="q-text">When s/he is read a story, s/he finds it difficult to work out the characters' intentions or feelings.
+        <div class="q-text-ar">صعب عليه يفهم مشاعر وأهداف شخصيات القصة</div>
+      </div>
+      <div class="binary-options">
+        <button class="binary-btn agree"    onclick="selectBinary(this,6,1)">Agree</button>
+        <button class="binary-btn disagree" onclick="selectBinary(this,6,0)">Disagree</button>
+      </div>
+    </div>
+
+    <div class="question-card" data-q="7">
+      <div class="q-number">Question 8 / 10 — AQ-10</div>
+      <div class="q-text">When s/he was younger, s/he used to enjoy playing games involving pretending with other children.
+        <div class="q-text-ar">كان بيحب يلعب لعب تمثيل مع الأطفال</div>
+      </div>
+      <div class="binary-options">
+        <button class="binary-btn agree"    onclick="selectBinary(this,7,0)">Agree</button>
+        <button class="binary-btn disagree" onclick="selectBinary(this,7,1)">Disagree</button>
+      </div>
+    </div>
+
+    <div class="question-card" data-q="8">
+      <div class="q-number">Question 9 / 10 — AQ-10</div>
+      <div class="q-text">S/he finds it easy to work out what someone is thinking or feeling just by looking at their face.
+        <div class="q-text-ar">بيعرف يفهم مشاعر الناس من وشوههم</div>
+      </div>
+      <div class="binary-options">
+        <button class="binary-btn agree"    onclick="selectBinary(this,8,0)">Agree</button>
+        <button class="binary-btn disagree" onclick="selectBinary(this,8,1)">Disagree</button>
+      </div>
+    </div>
+
+    <div class="question-card" data-q="9">
+      <div class="q-number">Question 10 / 10 — AQ-10</div>
+      <div class="q-text">S/he finds it difficult to make new friends.
+        <div class="q-text-ar">صعب عليه يعمل صداقات جديدة</div>
+      </div>
+      <div class="binary-options">
+        <button class="binary-btn agree"    onclick="selectBinary(this,9,1)">Agree</button>
+        <button class="binary-btn disagree" onclick="selectBinary(this,9,0)">Disagree</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Nav Buttons -->
+  <div class="nav-buttons" id="nav-buttons" style="display:none;">
+    <button class="btn-back" onclick="prevQuestion()">← Back</button>
+    <button class="btn-next" id="btn-next" onclick="nextQuestion()" disabled>Next →</button>
+  </div>
+
+  <!-- Score Result -->
+  <div class="score-card" id="score-card">
+    <div id="score-icon" style="font-size:3rem;margin-bottom:1rem;">📊</div>
+    <div class="score-num" id="score-num">0</div>
+    <div class="score-label">out of 10</div>
+    <div class="score-risk" id="score-risk"></div>
+    <p style="color:var(--white-muted);font-size:.85rem;margin-top:1rem;max-width:400px;margin-left:auto;margin-right:auto;line-height:1.6;" id="score-desc"></p>
+    <a href="/eye-tracking" class="btn-continue">Continue to Eye Tracking →</a>
+  </div>
+
+</main>
+
+<script>
+let currentType = 'qchat';
+let currentQ    = 0;
+let answers     = new Array(10).fill(-1);
+// scoring key: index of answer that scores 1
+// qchat: answer index 1 = score (except Q10: index 0 = score)
+const QCHAT_SCORE_IDX = [1,1,1,1,1,1,1,1,1,0];
+// aq10: stored directly via selectBinary
+
+function selectType(type) {
+  currentType = type;
+  document.querySelectorAll('.type-card').forEach((c,i) => {
+    c.classList.toggle('selected', (i===0&&type==='qchat')||(i===1&&type==='aq10'));
+  });
+}
+
+function startQuestionnaire() {
+  document.getElementById('type-selector').style.display    = 'none';
+  document.getElementById('start-btn-wrap').style.display   = 'none';
+  document.getElementById('progress-wrap').style.display    = 'block';
+  document.getElementById('nav-buttons').style.display      = 'flex';
+  document.getElementById(currentType+'-questions').style.display = 'block';
+  answers = new Array(10).fill(-1);
+  currentQ = 0;
+  showQuestion(0);
+}
+
+function showQuestion(idx) {
+  const container = document.getElementById(currentType+'-questions');
+  container.querySelectorAll('.question-card').forEach((c,i) => {
+    c.classList.toggle('active', i===idx);
+  });
+  updateProgress(idx);
+  document.getElementById('btn-next').disabled = (answers[idx] === -1);
+  document.getElementById('btn-next').textContent = idx===9 ? 'Submit ✓' : 'Next →';
+}
+
+function updateProgress(idx) {
+  const pct = Math.round(((idx+1)/10)*100);
+  document.getElementById('progress-fill').style.width = pct+'%';
+  document.getElementById('progress-text').textContent = `Question ${idx+1} of 10`;
+  document.getElementById('progress-pct').textContent  = pct+'%';
+}
+
+function selectOption(btn, qIdx, ansIdx) {
+  const card = btn.closest('.question-card');
+  card.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  answers[qIdx] = ansIdx;
+  document.getElementById('btn-next').disabled = false;
+}
+
+function selectBinary(btn, qIdx, score) {
+  const card = btn.closest('.question-card');
+  card.querySelectorAll('.binary-btn').forEach(b => {
+    b.classList.remove('selected-agree','selected-disagree');
+  });
+  btn.classList.add(btn.classList.contains('agree') ? 'selected-agree' : 'selected-disagree');
+  answers[qIdx] = score;
+  document.getElementById('btn-next').disabled = false;
+}
+
+function nextQuestion() {
+  if (currentQ < 9) {
+    currentQ++;
+    showQuestion(currentQ);
+  } else {
+    showResult();
+  }
+}
+
+function prevQuestion() {
+  if (currentQ > 0) {
+    currentQ--;
+    showQuestion(currentQ);
+  }
+}
+
+async function showResult() {
+  // حساب الـ score التقليدي
+  let score = 0;
+  if (currentType === 'qchat') {
+    answers.forEach((a,i) => { if(a === QCHAT_SCORE_IDX[i]) score++; });
+  } else {
+    answers.forEach(a => { if(a===1) score++; });
+  }
+
+  document.getElementById(currentType+'-questions').style.display = 'none';
+  document.getElementById('nav-buttons').style.display            = 'none';
+  document.getElementById('progress-wrap').style.display          = 'none';
+
+  const card = document.getElementById('score-card');
+  document.getElementById('score-num').textContent  = '...';
+  document.getElementById('score-icon').textContent = '⏳';
+  document.getElementById('score-risk').textContent = 'Analyzing with AI...';
+  document.getElementById('score-desc').textContent = 'Please wait';
+  card.classList.add('show');
+
+  // بعت للـ Flask API
+  try {
+    const payload = {
+      A1:answers[0], A2:answers[1], A3:answers[2], A4:answers[3], A5:answers[4],
+      A6:answers[5], A7:answers[6], A8:answers[7], A9:answers[8], A10:answers[9],
+      jaundice:       'no',
+      family_history: 'no',
+    };
+
+    const resp   = await fetch('/api/predict/questionnaire', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const result = await resp.json();
+
+    // عرض النتيجة من الـ ML model
+    const prob = result.final_prob;
+    const risk = result.risk_level;
+
+    const colorMap = {
+      'Low':      '#7fffc0',
+      'Moderate': '#ffd07a',
+      'High':     '#ff80c0',
+      'Very High':'#ff6060'
+    };
+    const iconMap = {
+      'Low':'✅', 'Moderate':'⚠️', 'High':'🔴', 'Very High':'🚨'
+    };
+    const descMap = {
+      'Low':      'Score below threshold. Continue monitoring development.',
+      'Moderate': 'Some indicators present. Consider follow-up evaluation.',
+      'High':     'Multiple indicators present. Specialist evaluation recommended.',
+      'Very High':'Strong indicators. Please consult a specialist as soon as possible.'
+    };
+
+    document.getElementById('score-num').textContent  = prob.toFixed(1) + '%';
+    document.getElementById('score-icon').textContent = iconMap[risk]  || '📊';
+    document.getElementById('score-risk').textContent = risk + ' Risk';
+    document.getElementById('score-desc').textContent = descMap[risk]  || '';
+
+    const color = colorMap[risk] || '#ffffff';
+    document.getElementById('score-num').style.color  = color;
+    document.getElementById('score-risk').style.color = color;
+
+    // لو فيه نتيجة من الموديلين
+    if (result.gb_prob !== undefined) {
+      const extra = document.getElementById('score-desc');
+      let extraText = descMap[risk] || '';
+      extraText += `\n\nGB Model: ${result.gb_prob}%`;
+      if (result.tabt_prob) extraText += ` | TabTransformer: ${result.tabt_prob}%`;
+      extra.style.whiteSpace = 'pre-line';
+      extra.textContent = extraText;
+    }
+
+  } catch(e) {
+    // fallback لو الـ API مش شغال
+    document.getElementById('score-num').textContent  = score;
+    document.getElementById('score-icon').textContent = '📊';
+    document.getElementById('score-risk').textContent = score >= 6 ? 'High Risk' : score >= 3 ? 'Moderate Risk' : 'Low Risk';
+    document.getElementById('score-desc').textContent = 'AI model unavailable — showing questionnaire score only.';
+  }
+}
+</script>
+</body>
+</html>

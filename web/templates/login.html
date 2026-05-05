@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AURA — Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Nunito:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --purple-deep:  #1a0533;
+  --purple-dark:  #2d0a5e;
+  --purple-mid:   #4a1a8a;
+  --purple-light: #7b3fc4;
+  --gold:         #f5a623;
+  --gold-light:   #ffd07a;
+  --pink:         #e91e8c;
+  --white:        #ffffff;
+  --white-soft:   rgba(255,255,255,0.85);
+  --white-muted:  rgba(255,255,255,0.45);
+  --card-bg:      rgba(255,255,255,0.06);
+  --card-border:  rgba(255,255,255,0.12);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  min-height: 100vh;
+  font-family: 'Nunito', sans-serif;
+  background: var(--purple-deep);
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── fix: allow right panel to scroll on small screens ── */
+@media (max-height: 750px) {
+  body { overflow: auto; }
+}
+
+/* ── LEFT PANEL ── */
+.left-panel {
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  overflow: hidden;
+}
+
+/* animated blobs */
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.35;
+  animation: float 8s ease-in-out infinite;
+}
+.blob-1 { width:400px; height:400px; background:var(--purple-mid);  top:-100px; left:-100px; animation-delay:0s; }
+.blob-2 { width:300px; height:300px; background:var(--pink);        bottom:0;   right:-80px; animation-delay:2s; }
+.blob-3 { width:250px; height:250px; background:var(--gold);        bottom:100px; left:50px; animation-delay:4s; opacity:.2; }
+
+@keyframes float {
+  0%,100% { transform: translateY(0) scale(1); }
+  50%      { transform: translateY(-30px) scale(1.05); }
+}
+
+/* grid overlay */
+.left-panel::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.brand { position: relative; text-align: center; z-index:1; }
+
+.brand-icon {
+  width: 90px; height: 90px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--purple-mid), var(--pink));
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 1.5rem;
+  font-size: 2.5rem;
+  box-shadow: 0 0 60px rgba(233,30,140,.4);
+  animation: pulse-icon 3s ease-in-out infinite;
+}
+
+@keyframes pulse-icon {
+  0%,100% { box-shadow: 0 0 40px rgba(233,30,140,.3); }
+  50%      { box-shadow: 0 0 80px rgba(233,30,140,.6); }
+}
+
+.brand-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 4.5rem; font-weight: 800;
+  color: var(--white);
+  letter-spacing: .05em;
+  line-height: 1;
+}
+
+.brand-title span { color: var(--gold); }
+
+.brand-sub {
+  font-size: .85rem; font-weight: 500;
+  color: var(--white-muted);
+  letter-spacing: .25em; text-transform: uppercase;
+  margin-top: .75rem;
+}
+
+.brand-tagline {
+  margin-top: 2.5rem;
+  font-size: 1.25rem; font-weight: 300;
+  color: var(--white-soft);
+  line-height: 1.7;
+  max-width: 360px;
+}
+
+.brand-tagline strong { color: var(--gold-light); font-weight: 600; }
+
+/* feature pills */
+.features {
+  display: flex; flex-direction: column; gap: .75rem;
+  margin-top: 2.5rem; width: 100%; max-width: 360px;
+}
+.feature-pill {
+  display: flex; align-items: center; gap: 1rem;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 999px;
+  padding: .75rem 1.25rem;
+  font-size: .85rem; color: var(--white-soft);
+  backdrop-filter: blur(8px);
+}
+.feature-pill .icon {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--purple-mid), var(--pink));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; flex-shrink: 0;
+}
+
+/* ── RIGHT PANEL ── */
+.right-panel {
+  width: 480px;
+  background: rgba(255,255,255,0.04);
+  backdrop-filter: blur(20px);
+  border-left: 1px solid var(--card-border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 1.5rem 2.5rem;
+  overflow-y: auto;
+  max-height: 100vh;
+  position: relative;
+}
+
+/* tabs */
+.tabs {
+  display: flex; gap: 0;
+  background: rgba(255,255,255,.06);
+  border-radius: 12px;
+  padding: 4px;
+  width: 100%; margin-bottom: 1.25rem;
+}
+.tab {
+  flex: 1; padding: .65rem;
+  text-align: center;
+  font-family: 'Nunito', sans-serif;
+  font-size: .85rem; font-weight: 600;
+  color: var(--white-muted);
+  border: none; background: transparent;
+  border-radius: 9px; cursor: pointer;
+  transition: all .25s;
+  letter-spacing: .05em;
+}
+.tab.active {
+  background: linear-gradient(135deg, var(--purple-mid), var(--pink));
+  color: var(--white);
+  box-shadow: 0 4px 20px rgba(233,30,140,.3);
+}
+
+/* form */
+.form-section { width: 100%; display: none; }
+.form-section.active { display: block; }
+
+.form-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.6rem; font-weight: 700;
+  color: var(--white);
+  margin-bottom: .3rem;
+}
+.form-subtitle {
+  font-size: .82rem; color: var(--white-muted);
+  margin-bottom: 1rem; line-height: 1.5;
+}
+
+.form-group { margin-bottom: 0.8rem; }
+
+.form-label {
+  display: block;
+  font-size: .75rem; font-weight: 600;
+  color: var(--white-muted);
+  letter-spacing: .1em; text-transform: uppercase;
+  margin-bottom: .35rem;
+}
+
+.form-input {
+  width: 100%;
+  background: rgba(255,255,255,.07);
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  padding: .65rem 1rem;
+  font-family: 'Nunito', sans-serif;
+  font-size: .9rem; color: var(--white);
+  outline: none;
+  transition: all .25s;
+}
+.form-input::placeholder { color: rgba(255,255,255,.25); }
+.form-input:focus {
+  border-color: var(--purple-light);
+  background: rgba(255,255,255,.1);
+  box-shadow: 0 0 0 3px rgba(123,63,196,.2);
+}
+
+/* two col */
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+select.form-input option { background: var(--purple-dark); color: var(--white); }
+
+.btn-primary {
+  width: 100%;
+  padding: .8rem;
+  background: linear-gradient(135deg, var(--purple-mid), var(--pink));
+  border: none; border-radius: 12px;
+  font-family: 'Nunito', sans-serif;
+  font-size: .95rem; font-weight: 700;
+  color: var(--white); cursor: pointer;
+  letter-spacing: .05em;
+  transition: all .25s;
+  margin-top: .3rem;
+  box-shadow: 0 8px 30px rgba(233,30,140,.3);
+}
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(233,30,140,.5);
+}
+.btn-primary:active { transform: translateY(0); }
+
+.divider {
+  display: flex; align-items: center; gap: 1rem;
+  margin: 1.5rem 0;
+  color: var(--white-muted); font-size: .8rem;
+}
+.divider::before, .divider::after {
+  content: ''; flex: 1;
+  height: 1px; background: var(--card-border);
+}
+
+.forgot {
+  text-align: right; margin-top: -.5rem; margin-bottom: 1.25rem;
+}
+.forgot a {
+  font-size: .8rem; color: var(--gold-light);
+  text-decoration: none;
+}
+.forgot a:hover { text-decoration: underline; }
+
+.disclaimer {
+  margin-top: 1rem;
+  padding: .75rem;
+  background: rgba(245,166,35,.08);
+  border: 1px solid rgba(245,166,35,.2);
+  border-radius: 10px;
+  font-size: .72rem; color: rgba(255,208,122,.8);
+  line-height: 1.5; text-align: center;
+}
+
+/* password toggle */
+.input-wrap { position: relative; }
+.input-wrap .toggle-pw {
+  position: absolute; right: 1rem; top: 50%;
+  transform: translateY(-50%);
+  background: none; border: none;
+  color: var(--white-muted); cursor: pointer;
+  font-size: 1rem;
+}
+
+/* success flash */
+.flash {
+  display: none;
+  background: rgba(0,200,100,.15);
+  border: 1px solid rgba(0,200,100,.3);
+  border-radius: 8px;
+  padding: .75rem 1rem;
+  font-size: .85rem; color: #7fffc0;
+  margin-bottom: 1rem;
+}
+.flash.show { display: block; }
+
+@media (max-width: 900px) {
+  body { flex-direction: column; overflow: auto; }
+  .left-panel { padding: 2rem; min-height: 40vh; }
+  .right-panel { width: 100%; border-left: none; border-top: 1px solid var(--card-border); }
+}
+</style>
+</head>
+<body>
+
+<!-- LEFT PANEL -->
+<div class="left-panel">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+
+  <div class="brand">
+    <div class="brand-icon">👁</div>
+    <div class="brand-title">AU<span>RA</span></div>
+    <div class="brand-sub">Autism Understanding & Risk Analyzer</div>
+    <p class="brand-tagline">
+      Early detection of <strong>Autism Spectrum Disorder</strong>
+      through AI-powered eye tracking and behavioral analysis.
+    </p>
+
+    <div class="features">
+      <div class="feature-pill">
+        <div class="icon">👁</div>
+        Real-time eye tracking analysis
+      </div>
+      <div class="feature-pill">
+        <div class="icon">📋</div>
+        Q-CHAT-10 & AQ-10 questionnaires
+      </div>
+      <div class="feature-pill">
+        <div class="icon">📈</div>
+        Progress tracking over time
+      </div>
+      <div class="feature-pill">
+        <div class="icon">🤖</div>
+        AI-powered risk assessment
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RIGHT PANEL -->
+<div class="right-panel">
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('login')">Sign In</button>
+    <button class="tab" onclick="switchTab('register')">Create Account</button>
+  </div>
+
+  <!-- LOGIN FORM -->
+  <div class="form-section active" id="login-form">
+    <div class="form-title">Welcome back</div>
+    <div class="form-subtitle">Sign in to access your child's assessment dashboard</div>
+
+    <!-- رسائل Flask -->
+    {% if error %}
+    <div class="flash show" style="background:rgba(233,30,140,.15);border-color:rgba(233,30,140,.3);color:#ff80c0;">
+      ✗ {{ error }}
+    </div>
+    {% endif %}
+    {% if success %}
+    <div class="flash show">✓ {{ success }}</div>
+    {% endif %}
+
+    <form method="POST" action="/login" id="login-form-el">
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input type="email" name="email" class="form-input" placeholder="parent@email.com" id="login-email" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <div class="input-wrap">
+          <input type="password" name="password" class="form-input" placeholder="Enter your password" id="login-pw" style="padding-right:3rem" required>
+          <button type="button" class="toggle-pw" onclick="togglePw('login-pw', this)">👁</button>
+        </div>
+      </div>
+      <div class="forgot"><a href="#">Forgot password?</a></div>
+      <button type="submit" class="btn-primary">Sign In →</button>
+    </form>
+
+    <div class="disclaimer">
+      ⚠️ AURA is a decision-support tool — not a replacement for professional medical diagnosis.
+    </div>
+  </div>
+
+  <!-- REGISTER FORM -->
+  <div class="form-section" id="register-form">
+    <div class="form-title">Create account</div>
+    <div class="form-subtitle">Register to start your child's assessment journey</div>
+
+    {% if reg_error %}
+    <div class="flash show" style="background:rgba(233,30,140,.15);border-color:rgba(233,30,140,.3);color:#ff80c0;">
+      ✗ {{ reg_error }}
+    </div>
+    {% endif %}
+
+    <form method="POST" action="/register" id="register-form-el">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">First Name</label>
+          <input type="text" name="fname" class="form-input" placeholder="Sarah" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Last Name</label>
+          <input type="text" name="lname" class="form-input" placeholder="Ahmed" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input type="email" name="email" class="form-input" placeholder="parent@email.com" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <div class="input-wrap">
+          <input type="password" name="password" class="form-input" placeholder="Min. 8 characters" id="reg-pw" style="padding-right:3rem" required>
+          <button type="button" class="toggle-pw" onclick="togglePw('reg-pw', this)">👁</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Child's Name</label>
+        <input type="text" name="child_name" class="form-input" placeholder="Child's full name" required>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Date of Birth</label>
+          <input type="date" name="dob" class="form-input" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Gender</label>
+          <select name="gender" class="form-input" required>
+            <option value="">Select</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+          </select>
+        </div>
+      </div>
+      <button type="submit" class="btn-primary">Create Account →</button>
+    </form>
+
+    <div class="disclaimer">
+      ⚠️ AURA is a decision-support tool — not a replacement for professional medical diagnosis.
+    </div>
+  </div>
+
+</div>
+
+<script>
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    t.classList.toggle('active', (i===0 && tab==='login') || (i===1 && tab==='register'));
+  });
+  document.getElementById('login-form').classList.toggle('active', tab==='login');
+  document.getElementById('register-form').classList.toggle('active', tab==='register');
+}
+
+function togglePw(id, btn) {
+  const inp = document.getElementById(id);
+  if (inp.type === 'password') { inp.type = 'text';     btn.textContent = '🙈'; }
+  else                          { inp.type = 'password'; btn.textContent = '👁'; }
+}
+
+// لو فيه error في الـ register، افتح tab الـ register تلقائياً
+window.onload = () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  if (document.getElementById('reg-err') &&
+      document.getElementById('reg-err').classList.contains('show')) {
+    switchTab('register');
+  }
+};
+</script>
+</body>
+</html>

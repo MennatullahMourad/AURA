@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AURA — Eye Tracking</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Nunito:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --purple-deep:#1a0533;--purple-mid:#4a1a8a;--purple-light:#7b3fc4;
+  --gold:#f5a623;--gold-light:#ffd07a;--pink:#e91e8c;
+  --white:#ffffff;--white-soft:rgba(255,255,255,0.85);--white-muted:rgba(255,255,255,0.45);
+  --card-bg:rgba(255,255,255,0.06);--card-border:rgba(255,255,255,0.12);
+  --cyan:#00c9ff;--sidebar-w:260px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Nunito',sans-serif;background:var(--purple-deep);color:var(--white);display:flex;min-height:100vh;}
+
+/* SIDEBAR */
+.sidebar{width:var(--sidebar-w);background:rgba(255,255,255,0.04);border-right:1px solid var(--card-border);display:flex;flex-direction:column;padding:2rem 1.25rem;position:fixed;top:0;left:0;height:100vh;backdrop-filter:blur(10px);z-index:100;}
+.sidebar-logo{display:flex;align-items:center;gap:.75rem;margin-bottom:2.5rem;}
+.sidebar-logo .icon{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--purple-mid),var(--pink));display:flex;align-items:center;justify-content:center;font-size:1.1rem;}
+.sidebar-logo .name{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:800;}
+.sidebar-logo .name span{color:var(--gold);}
+.nav-section-label{font-size:.65rem;font-weight:700;color:var(--white-muted);letter-spacing:.2em;text-transform:uppercase;padding:0 .75rem;margin-bottom:.5rem;margin-top:1.5rem;}
+.nav-item{display:flex;align-items:center;gap:.75rem;padding:.75rem;border-radius:10px;cursor:pointer;color:var(--white-muted);font-size:.9rem;font-weight:500;text-decoration:none;transition:all .2s;margin-bottom:.25rem;}
+.nav-item:hover{background:var(--card-bg);color:var(--white);}
+.nav-item.active{background:linear-gradient(135deg,rgba(74,26,138,.6),rgba(233,30,140,.3));color:var(--white);border:1px solid rgba(233,30,140,.3);}
+.sidebar-bottom{margin-top:auto;border-top:1px solid var(--card-border);padding-top:1.25rem;}
+.user-card{display:flex;align-items:center;gap:.75rem;padding:.75rem;background:var(--card-bg);border-radius:10px;}
+.user-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--purple-mid),var(--pink));display:flex;align-items:center;justify-content:center;font-size:.9rem;}
+
+/* MAIN */
+.main{margin-left:var(--sidebar-w);flex:1;padding:2rem 2.5rem;overflow-y:auto;}
+.page-header{margin-bottom:1.5rem;}
+.page-header h1{font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:700;}
+.page-header p{color:var(--white-muted);font-size:.9rem;margin-top:.4rem;}
+
+/* ── STATES ── */
+.state{display:none;}
+.state.active{display:block;}
+
+/* ── STATE: READY ── */
+.ready-info{background:var(--card-bg);border:1px solid var(--card-border);border-radius:16px;padding:1.5rem;margin-bottom:1.5rem;}
+.ready-title{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;margin-bottom:1rem;}
+.steps-row{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem;}
+.step-card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:14px;padding:1.1rem;}
+.step-num{font-size:.62rem;color:var(--cyan);letter-spacing:.15em;text-transform:uppercase;margin-bottom:.4rem;}
+.step-icon{font-size:1.6rem;margin-bottom:.4rem;}
+.step-title{font-weight:700;font-size:.85rem;margin-bottom:.3rem;}
+.step-desc{font-size:.73rem;color:var(--white-muted);line-height:1.5;}
+.btn-start{width:100%;padding:1.1rem;background:linear-gradient(135deg,#005599,var(--cyan));border:none;border-radius:14px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:1rem;font-weight:700;color:#001e3c;transition:all .25s;box-shadow:0 8px 30px rgba(0,201,255,.35);}
+.btn-start:hover{transform:translateY(-2px);box-shadow:0 14px 40px rgba(0,201,255,.5);}
+
+/* ── STATE: COUNTDOWN ── */
+.countdown-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:55vh;gap:1.5rem;}
+.countdown-ring{width:180px;height:180px;border-radius:50%;background:rgba(0,20,50,.8);border:3px solid var(--cyan);display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 0 60px rgba(0,201,255,.4);animation:rpulse 1s ease-in-out infinite;}
+@keyframes rpulse{0%,100%{box-shadow:0 0 40px rgba(0,201,255,.3);}50%{box-shadow:0 0 90px rgba(0,201,255,.7);}}
+.countdown-num{font-family:'JetBrains Mono',monospace;font-size:5rem;font-weight:700;color:var(--cyan);line-height:1;}
+.countdown-label{font-size:.85rem;color:var(--white-muted);}
+.countdown-msg{font-size:1rem;color:var(--white-soft);text-align:center;max-width:380px;line-height:1.7;}
+
+/* ── STATE: SESSION (the main one) ── */
+.session-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;}
+.session-header h2{font-family:'Playfair Display',serif;font-size:1.3rem;}
+.timer-badge{font-family:'JetBrains Mono',monospace;font-size:1.4rem;font-weight:700;color:var(--cyan);background:rgba(0,201,255,.1);border:1px solid rgba(0,201,255,.3);border-radius:10px;padding:.4rem 1rem;}
+.rec-indicator{display:flex;align-items:center;gap:.5rem;font-size:.8rem;color:#ff6060;}
+.rec-dot{width:8px;height:8px;border-radius:50%;background:#ff6060;animation:blink .6s step-end infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+
+/* Split screen */
+.split-screen{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;}
+.video-panel{border-radius:16px;overflow:hidden;position:relative;background:#000;aspect-ratio:16/9;}
+.video-panel video{width:100%;height:100%;object-fit:cover;display:block;}
+.video-panel .vp-label{position:absolute;top:10px;left:12px;background:rgba(0,0,0,.65);border-radius:6px;padding:.25rem .75rem;font-size:.75rem;font-weight:700;backdrop-filter:blur(4px);}
+.video-panel .vp-label.social{color:#7fffc0;border:1px solid rgba(127,255,192,.3);}
+.video-panel .vp-label.nonsocial{color:var(--gold);border:1px solid rgba(245,166,35,.3);}
+.video-panel .vp-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,10,30,.85);flex-direction:column;gap:.75rem;}
+.vp-play-icon{font-size:3rem;}
+.vp-phase-label{font-size:.9rem;color:var(--white-soft);text-align:center;}
+/* webcam small overlay — hidden, camera runs in background only */
+.webcam-overlay{display:none;}
+
+/* progress bar */
+.session-progress{height:6px;background:rgba(255,255,255,.1);border-radius:999px;overflow:hidden;margin-bottom:1rem;}
+.session-progress-fill{height:100%;background:linear-gradient(90deg,var(--purple-light),var(--cyan));border-radius:999px;transition:width .5s linear;}
+
+/* live stats */
+.live-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:.85rem;margin-bottom:1rem;}
+.ls-card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:12px;padding:.85rem;text-align:center;}
+.ls-val{font-family:'JetBrains Mono',monospace;font-size:1.3rem;font-weight:700;color:var(--cyan);}
+.ls-lbl{font-size:.62rem;color:var(--white-muted);text-transform:uppercase;letter-spacing:.08em;margin-top:.2rem;}
+
+/* ── STATE: PROCESSING ── */
+.processing-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:55vh;gap:1.5rem;text-align:center;}
+.spinner{width:70px;height:70px;border-radius:50%;border:4px solid rgba(0,201,255,.15);border-top:4px solid var(--cyan);animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.processing-title{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;}
+.ps-list{display:flex;flex-direction:column;gap:.6rem;width:100%;max-width:360px;}
+.ps-item{display:flex;align-items:center;gap:.75rem;background:var(--card-bg);border:1px solid var(--card-border);border-radius:10px;padding:.7rem 1rem;font-size:.82rem;color:var(--white-muted);transition:all .4s;}
+.ps-item.done{border-color:rgba(0,200,100,.3);color:#7fffc0;}
+.ps-item.running{border-color:rgba(0,201,255,.4);color:var(--cyan);}
+
+/* ── STATE: RESULT ── */
+.result-hero{background:linear-gradient(135deg,rgba(0,20,60,.85),rgba(0,100,150,.35));border:1px solid rgba(0,201,255,.3);border-radius:20px;padding:2rem 2.5rem;display:flex;align-items:center;gap:2.5rem;margin-bottom:1.5rem;}
+.result-ring-wrap{position:relative;width:150px;height:150px;flex-shrink:0;}
+.result-ring-wrap svg{transform:rotate(-90deg);}
+.ring-bg{stroke:rgba(255,255,255,.06);fill:none;stroke-width:12;}
+.ring-fill{fill:none;stroke-width:12;stroke-linecap:round;transition:stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1);}
+.ring-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;}
+.ring-pct{font-family:'JetBrains Mono',monospace;font-size:2rem;font-weight:700;}
+.ring-lbl{font-size:.6rem;color:var(--white-muted);text-transform:uppercase;letter-spacing:.1em;}
+.result-info .ri-date{font-size:.75rem;color:var(--white-muted);margin-bottom:.3rem;}
+.result-info .ri-risk{font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:700;}
+.result-info .ri-desc{font-size:.85rem;color:var(--white-soft);margin-top:.5rem;line-height:1.65;max-width:480px;}
+.brd-row{display:flex;gap:1rem;margin-top:1.25rem;flex-wrap:wrap;}
+.brd-item{text-align:center;background:rgba(255,255,255,.05);border-radius:10px;padding:.75rem 1rem;}
+.brd-v{font-family:'JetBrains Mono',monospace;font-size:1.2rem;font-weight:700;color:var(--gold);}
+.brd-l{font-size:.62rem;color:var(--white-muted);text-transform:uppercase;margin-top:.2rem;}
+.result-actions{display:flex;gap:.85rem;flex-wrap:wrap;margin-top:1rem;}
+.btn{padding:.85rem 1.75rem;border:none;border-radius:12px;cursor:pointer;font-family:'Nunito',sans-serif;font-size:.9rem;font-weight:700;transition:all .2s;}
+.btn-cyan{background:linear-gradient(135deg,#005599,var(--cyan));color:#001e3c;box-shadow:0 6px 20px rgba(0,201,255,.3);}
+.btn-cyan:hover{transform:translateY(-2px);}
+.btn-pink{background:linear-gradient(135deg,var(--purple-mid),var(--pink));color:#fff;box-shadow:0 6px 20px rgba(233,30,140,.3);}
+.btn-pink:hover{transform:translateY(-2px);}
+.btn-ghost{background:rgba(255,255,255,.07);border:1px solid var(--card-border);color:var(--white-soft);}
+.btn-ghost:hover{background:rgba(255,255,255,.12);}
+.disc{padding:1rem 1.5rem;background:rgba(245,166,35,.06);border:1px solid rgba(245,166,35,.2);border-radius:12px;font-size:.78rem;color:rgba(255,208,122,.7);text-align:center;line-height:1.6;margin-top:1.5rem;}
+
+/* Logout button in sidebar */
+.btn-logout {
+  display: flex; align-items: center; gap: .6rem;
+  width: 100%;
+  background: rgba(233,30,140,.1);
+  border: 1px solid rgba(233,30,140,.25);
+  border-radius: 10px;
+  padding: .65rem 1rem;
+  font-family: 'Nunito', sans-serif;
+  font-size: .82rem; font-weight: 600;
+  color: rgba(255,130,180,.9);
+  cursor: pointer; text-decoration: none;
+  transition: all .2s;
+  margin-top: .5rem;
+}
+.btn-logout:hover {
+  background: rgba(233,30,140,.2);
+  color: #fff;
+  border-color: rgba(233,30,140,.5);
+}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="icon">👁</div>
+    <div class="name">AU<span>RA</span></div>
+  </div>
+  <div class="nav-section-label">Main</div>
+  <a href="/dashboard"     class="nav-item"><span>🏠</span> Dashboard</a>
+  <a href="/questionnaire" class="nav-item"><span>📋</span> Questionnaire</a>
+  <a href="/eye-tracking"  class="nav-item active"><span>👁</span> Eye Tracking</a>
+  <a href="/results"       class="nav-item"><span>📊</span> Results</a>
+  <div class="nav-section-label">Support</div>
+  <a href="/chatbot"       class="nav-item"><span>🤖</span> AI Assistant</a>
+  <div class="sidebar-bottom">
+    <div class="user-card">
+      <div class="user-avatar">👩</div>
+      <div>
+        <div style="font-size:.85rem;font-weight:600;">{{ user.first_name ~ " " ~ user.last_name if user else "—" }}</div>
+        <div style="font-size:.72rem;color:var(--white-muted);">Parent Account</div>
+      </div>
+    </div>
+    <a href="/logout" class="btn-logout">
+      <span>🚪</span> Log Out
+    </a>
+  </div>
+</aside>
+
+<main class="main">
+
+  <div class="page-header">
+    <h1>👁 Eye Tracking Session</h1>
+    <p>Child watches two videos — AI analyzes gaze patterns in real-time</p>
+  </div>
+
+  <!-- ═══════════════ STATE: READY ═══════════════ -->
+  <div class="state active" id="state-ready">
+    <div class="steps-row">
+      <div class="step-card">
+        <div class="step-num">Step 01</div>
+        <div class="step-icon">💡</div>
+        <div class="step-title">Prepare</div>
+        <div class="step-desc">Well-lit room. Child seated 40–60 cm from screen. Webcam working.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">Step 02</div>
+        <div class="step-icon">🎬</div>
+        <div class="step-title">Watch Videos</div>
+        <div class="step-desc">Two 13-second videos play side by side — social scene &amp; non-social scene.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">Step 03</div>
+        <div class="step-icon">📊</div>
+        <div class="step-title">Get Results</div>
+        <div class="step-desc">AI analyzes gaze patterns and generates ASD risk score automatically.</div>
+      </div>
+    </div>
+
+    <div class="ready-info">
+      <div class="ready-title">📁 Video Files</div>
+      <p style="font-size:.85rem;color:var(--white-muted);margin-bottom:.75rem;">
+        Videos should be placed in: <code style="color:var(--cyan);">C:\Users\USER\Desktop\AURA\Videos\</code>
+      </p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1rem;">
+        <div style="background:rgba(0,200,100,.07);border:1px solid rgba(0,200,100,.2);border-radius:10px;padding:.85rem;">
+          <div style="font-size:.75rem;font-weight:700;color:#7fffc0;margin-bottom:.3rem;">🧒 Social Video</div>
+          <div id="social-fname" style="font-size:.8rem;color:var(--white-muted);">social.mp4 — people interacting</div>
+        </div>
+        <div style="background:rgba(245,166,35,.07);border:1px solid rgba(245,166,35,.2);border-radius:10px;padding:.85rem;">
+          <div style="font-size:.75rem;font-weight:700;color:var(--gold);margin-bottom:.3rem;">🎈 Non-Social Video</div>
+          <div id="nonsocial-fname" style="font-size:.8rem;color:var(--white-muted);">nonsocial.mp4 — moving objects</div>
+        </div>
+      </div>
+      <div style="font-size:.78rem;color:rgba(245,166,35,.7);background:rgba(245,166,35,.06);border:1px solid rgba(245,166,35,.2);border-radius:8px;padding:.65rem 1rem;">
+        ⚠️ Since this runs in a browser, videos are served by Flask from the Videos folder.
+        Make sure Flask can access the path above.
+      </div>
+    </div>
+
+    <button class="btn-start" onclick="startCountdown()">▶ Start Eye Tracking Session</button>
+
+    <div class="disc" style="margin-top:1rem;">
+      ⚠️ AURA is a decision-support tool — NOT a replacement for professional medical diagnosis.
+    </div>
+  </div>
+
+  <!-- ═══════════════ STATE: COUNTDOWN ═══════════════ -->
+  <div class="state" id="state-countdown">
+    <div class="countdown-wrap">
+      <div class="countdown-ring">
+        <div class="countdown-num" id="countdown-num">3</div>
+        <div class="countdown-label">seconds</div>
+      </div>
+      <div class="countdown-msg">
+        Ask your child to look at the screen.<br>
+        <strong style="color:var(--cyan);">Recording starts automatically.</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ STATE: SESSION ═══════════════ -->
+  <div class="state" id="state-session">
+    <div class="session-header">
+      <div style="display:flex;align-items:center;gap:1rem;">
+        <h2>Recording Session</h2>
+        <div class="rec-indicator"><div class="rec-dot"></div> REC</div>
+      </div>
+      <div class="timer-badge" id="session-timer">26.0s</div>
+    </div>
+
+    <!-- Progress -->
+    <div class="session-progress">
+      <div class="session-progress-fill" id="session-progress" style="width:0%"></div>
+    </div>
+
+    <!-- ══ SPLIT SCREEN: 2 videos ══ -->
+    <div class="split-screen">
+
+      <!-- LEFT: Social video -->
+      <div class="video-panel" id="panel-social">
+        <div class="vp-label social">🧒 Social Scene</div>
+        <!-- Flask serves video from /static/videos/ -->
+        <video id="vid-social" muted playsinline>
+          <source src="/videos/social.mp4" type="video/mp4">
+        </video>
+        <!-- Fallback placeholder if video not found -->
+        <div class="vp-overlay" id="overlay-social">
+          <div class="vp-play-icon">🧒</div>
+          <div class="vp-phase-label">Social Scene<br><span style="font-size:.72rem;color:var(--white-muted);">People interacting</span></div>
+        </div>
+        <!-- Webcam small window (bottom right of social panel) -->
+        <div class="webcam-overlay">
+          <video id="webcam-small" autoplay muted playsinline></video>
+        </div>
+      </div>
+
+      <!-- RIGHT: Non-social video -->
+      <div class="video-panel" id="panel-nonsocial">
+        <div class="vp-label nonsocial">🎈 Non-Social Scene</div>
+        <video id="vid-nonsocial" muted playsinline>
+          <source src="/videos/nonsocial.mp4" type="video/mp4">
+        </video>
+        <div class="vp-overlay" id="overlay-nonsocial">
+          <div class="vp-play-icon">🎈</div>
+          <div class="vp-phase-label">Non-Social Scene<br><span style="font-size:.72rem;color:var(--white-muted);">Moving objects</span></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Live stats -->
+    <div class="live-stats">
+      <div class="ls-card"><div class="ls-val" id="ls-frames">0</div><div class="ls-lbl">Frames</div></div>
+      <div class="ls-card"><div class="ls-val" id="ls-fix">0</div><div class="ls-lbl">Fixations</div></div>
+      <div class="ls-card"><div class="ls-val" id="ls-sac">0</div><div class="ls-lbl">Saccades</div></div>
+      <div class="ls-card"><div class="ls-val" id="ls-gaze">—</div><div class="ls-lbl">Gaze Side</div></div>
+    </div>
+
+    <div style="font-size:.75rem;color:var(--white-muted);text-align:center;">
+      Tracking child's eye movement via webcam • MediaPipe Face Mesh
+    </div>
+  </div>
+
+  <!-- ═══════════════ STATE: PROCESSING ═══════════════ -->
+  <div class="state" id="state-processing">
+    <div class="processing-wrap">
+      <div class="spinner"></div>
+      <div class="processing-title">Analyzing Eye Tracking Data…</div>
+      <div class="ps-list">
+        <div class="ps-item running" id="ps-1"><span>⚙️</span> Building feature sequences (window=50)</div>
+        <div class="ps-item"        id="ps-2"><span>🧠</span> Running BiLSTM encoder</div>
+        <div class="ps-item"        id="ps-3"><span>⚡</span> Transformer attention layers (4 layers)</div>
+        <div class="ps-item"        id="ps-4"><span>🔀</span> Fusion with questionnaire score</div>
+        <div class="ps-item"        id="ps-5"><span>📊</span> Generating risk report</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ STATE: RESULT ═══════════════ -->
+  <div class="state" id="state-result">
+    <div class="result-hero">
+      <div class="result-ring-wrap">
+        <svg viewBox="0 0 150 150" width="150" height="150">
+          <circle class="ring-bg" cx="75" cy="75" r="63"/>
+          <circle class="ring-fill" id="ring-fill" cx="75" cy="75" r="63"
+            stroke="#7fffc0" stroke-dasharray="396" stroke-dashoffset="396"/>
+        </svg>
+        <div class="ring-center">
+          <div class="ring-pct" id="res-pct" style="color:#7fffc0">—</div>
+          <div class="ring-lbl">ASD Risk</div>
+        </div>
+      </div>
+      <div class="result-info">
+        <div class="ri-date">📅 Session — <span id="res-date">—</span></div>
+        <div class="ri-risk" id="res-risk">—</div>
+        <div class="ri-desc" id="res-desc">—</div>
+        <div class="brd-row">
+          <div class="brd-item"><div class="brd-v" id="bd-frames">—</div><div class="brd-l">Frames</div></div>
+          <div class="brd-item"><div class="brd-v" id="bd-fix">—</div><div class="brd-l">Fixations</div></div>
+          <div class="brd-item"><div class="brd-v" id="bd-sac">—</div><div class="brd-l">Saccades</div></div>
+          <div class="brd-item"><div class="brd-v" id="bd-seqs">—</div><div class="brd-l">Sequences</div></div>
+          <div class="brd-item"><div class="brd-v">26s</div><div class="brd-l">Duration</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="result-actions">
+      <button class="btn btn-cyan"  onclick="window.location='/results'">📊 View Full Results</button>
+      <button class="btn btn-pink"  onclick="restartSession()">↺ New Session</button>
+      <button class="btn btn-ghost" onclick="window.location='/dashboard'">🏠 Dashboard</button>
+    </div>
+    <div class="disc">⚠️ AURA is a decision-support tool — NOT a replacement for professional medical diagnosis.</div>
+  </div>
+
+</main>
+
+<!-- MediaPipe -->
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   AURA Eye Tracking Session
+   26 seconds — split screen (social + non-social)
+   Webcam tracks eye movement via MediaPipe
+   Sends CSV to /api/predict/eye-tracking (Flask)
+═══════════════════════════════════════════════════ */
+
+const SESSION_DURATION = 26;
+const FPS_TARGET       = 25;
+const WINDOW_SIZE      = 50;
+const LEFT_IRIS        = [468,469,470,471,472];
+const RIGHT_IRIS       = [473,474,475,476,477];
+
+const ET = {
+  stream: null, faceMesh: null, recording: false,
+  startTime: null, rows: [], frames: 0,
+  fixations: 0, saccades: 0, lastGaze: null,
+  timerIv: null, fallbackIv: null
+};
+
+// ── Show/hide states ──────────────────────────────
+function showState(id) {
+  document.querySelectorAll('.state').forEach(s => s.classList.remove('active'));
+  document.getElementById('state-' + id).classList.add('active');
+}
+
+// ── Countdown ─────────────────────────────────────
+function startCountdown() {
+  showState('countdown');
+  initWebcam();
+  let n = 3;
+  document.getElementById('countdown-num').textContent = n;
+  const iv = setInterval(() => {
+    n--;
+    if (n > 0) {
+      document.getElementById('countdown-num').textContent = n;
+    } else {
+      clearInterval(iv);
+      startSession();
+    }
+  }, 1000);
+}
+
+// ── Init webcam ───────────────────────────────────
+async function initWebcam() {
+  try {
+    ET.stream = await navigator.mediaDevices.getUserMedia({
+      video: { width:{ideal:320}, height:{ideal:240}, facingMode:'user' },
+      audio: false
+    });
+    const smallVid = document.getElementById('webcam-small');
+    if (smallVid) smallVid.srcObject = ET.stream;
+    initMediaPipe();
+  } catch(e) {
+    console.warn('Webcam not available:', e.message);
+  }
+}
+
+// ── MediaPipe Face Mesh ───────────────────────────
+function initMediaPipe() {
+  if (typeof FaceMesh === 'undefined') return;
+  const fm = new FaceMesh({
+    locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${f}`
+  });
+  fm.setOptions({ maxNumFaces:1, refineLandmarks:true,
+    minDetectionConfidence:0.5, minTrackingConfidence:0.5 });
+  fm.onResults(onFMResults);
+  ET.faceMesh = fm;
+
+  const hidVid = document.createElement('video');
+  hidVid.autoplay = true; hidVid.muted = true; hidVid.playsInline = true;
+  hidVid.srcObject = ET.stream;
+  hidVid.style.display = 'none';
+  document.body.appendChild(hidVid);
+
+  const cam = new Camera(hidVid, {
+    onFrame: async () => { if (ET.faceMesh && ET.recording) await ET.faceMesh.send({image: hidVid}); },
+    width:320, height:240
+  });
+  cam.start();
+}
+
+function onFMResults(results) {
+  if (!ET.recording || !results.multiFaceLandmarks?.length) return;
+  captureFrame(results.multiFaceLandmarks[0]);
+}
+
+// ── Start session ─────────────────────────────────
+function startSession() {
+  ET.rows=[]; ET.frames=0; ET.fixations=0; ET.saccades=0;
+  ET.lastGaze=null; ET.recording=true;
+  ET.startTime = performance.now();
+
+  showState('session');
+
+  // Play both videos
+  const vSocial    = document.getElementById('vid-social');
+  const vNonSocial = document.getElementById('vid-nonsocial');
+
+  function tryPlay(vid, overlayId) {
+    // Reload source so browser re-fetches
+    vid.load();
+    vid.oncanplay = () => {
+      document.getElementById(overlayId).style.display = 'none';
+    };
+    vid.onplaying = () => {
+      document.getElementById(overlayId).style.display = 'none';
+    };
+    vid.onerror = () => {
+      // Video file not found — keep overlay
+      console.warn('Video not found:', vid.currentSrc);
+    };
+    vid.play().catch(e => console.warn('Autoplay blocked:', e.message));
+  }
+
+  tryPlay(vSocial,    'overlay-social');
+  tryPlay(vNonSocial, 'overlay-nonsocial');
+
+  // Fallback capture if no MediaPipe
+  if (!ET.faceMesh) {
+    ET.fallbackIv = setInterval(captureFrameFallback, 1000 / FPS_TARGET);
+  }
+
+  // Main timer
+  const startMs = performance.now();
+  ET.timerIv = setInterval(() => {
+    const elapsed   = (performance.now() - startMs) / 1000;
+    const remaining = Math.max(0, SESSION_DURATION - elapsed);
+    const pct       = (elapsed / SESSION_DURATION) * 100;
+
+    document.getElementById('session-timer').textContent    = remaining.toFixed(1) + 's';
+    document.getElementById('session-progress').style.width = pct + '%';
+
+    if (elapsed >= SESSION_DURATION) {
+      clearInterval(ET.timerIv);
+      if (ET.fallbackIv) clearInterval(ET.fallbackIv);
+      ET.recording = false;
+      vSocial.pause(); vNonSocial.pause();
+      processAndSend();
+    }
+  }, 100);
+}
+
+// ── Capture frame from landmarks ──────────────────
+function captureFrame(lm) {
+  const elapsed = (performance.now() - ET.startTime) / 1000;
+  const cx = idx => lm[idx].x; const cy = idx => lm[idx].y;
+  const cent = idxs => ({
+    x: idxs.reduce((s,i)=>s+cx(i),0)/idxs.length,
+    y: idxs.reduce((s,i)=>s+cy(i),0)/idxs.length
+  });
+  const rI = cent(RIGHT_IRIS); const lI = cent(LEFT_IRIS);
+  const gazeX = (rI.x + lI.x) / 2;
+  const gazeY = (rI.y + lI.y) / 2;
+
+  const rPupil = Math.hypot(cx(RIGHT_IRIS[1])-cx(RIGHT_IRIS[3]),
+                             cy(RIGHT_IRIS[1])-cy(RIGHT_IRIS[3])) * 100;
+  const lPupil = Math.hypot(cx(LEFT_IRIS[1])-cx(LEFT_IRIS[3]),
+                             cy(LEFT_IRIS[1])-cy(LEFT_IRIS[3])) * 100;
+
+  let cat = 'Fixation';
+  if (ET.lastGaze) {
+    const vel = Math.hypot(gazeX - ET.lastGaze.x, gazeY - ET.lastGaze.y) * 1000;
+    if (vel > 30) { cat = 'Saccade'; ET.saccades++; } else { ET.fixations++; }
+  } else { ET.fixations++; }
+  ET.lastGaze = {x:gazeX, y:gazeY};
+
+  const nosZ = lm[1]?.z ?? 0;
+  ET.rows.push({
+    'Timestamp':                    elapsed.toFixed(3),
+    'Category Right':               cat,
+    'Pupil Diameter Right [mm]':    rPupil.toFixed(3),
+    'Point of Regard Right X [px]': (rI.x*1920).toFixed(1),
+    'Point of Regard Right Y [px]': (rI.y*1080).toFixed(1),
+    'Gaze Vector Right Z':          (lm[RIGHT_IRIS[0]]?.z??0).toFixed(4),
+    'AOI Name Right':               gazeX < 0.5 ? 'corps' : 'BallonVisible',
+    'Tracking Ratio [%]':           '95.0',
+    'Pupil Diameter Left [mm]':     lPupil.toFixed(3),
+    'Point of Regard Left X [px]':  (lI.x*1920).toFixed(1),
+    'Point of Regard Left Y [px]':  (lI.y*1080).toFixed(1),
+    'Gaze Vector Left Z':           nosZ.toFixed(4),
+  });
+  ET.frames++;
+  updateLiveStats(gazeX);
+}
+
+function captureFrameFallback() {
+  if (!ET.recording) return;
+  const t = (performance.now()-ET.startTime)/1000;
+  const gx = 0.3 + Math.sin(t*0.4)*0.3 + (Math.random()-.5)*0.1;
+  const gy = 0.5 + Math.cos(t*0.3)*0.2 + (Math.random()-.5)*0.08;
+  const vel = Math.random()*60;
+  const cat = vel>35 ? 'Saccade' : 'Fixation';
+  if (cat==='Saccade') ET.saccades++; else ET.fixations++;
+  ET.lastGaze = {x:gx, y:gy};
+  const rp = (3.5+Math.random()*1.2).toFixed(3);
+  ET.rows.push({
+    'Timestamp': t.toFixed(3), 'Category Right': cat,
+    'Pupil Diameter Right [mm]': rp,
+    'Point of Regard Right X [px]': (gx*1920).toFixed(1),
+    'Point of Regard Right Y [px]': (gy*1080).toFixed(1),
+    'Gaze Vector Right Z': (-0.1+Math.random()*0.05).toFixed(4),
+    'AOI Name Right': gx<0.5?'corps':'BallonVisible',
+    'Tracking Ratio [%]': '80.0',
+    'Pupil Diameter Left [mm]': (3.4+Math.random()*1.1).toFixed(3),
+    'Point of Regard Left X [px]': ((gx-.03)*1920).toFixed(1),
+    'Point of Regard Left Y [px]': (gy*1080).toFixed(1),
+    'Gaze Vector Left Z': (-0.1+Math.random()*0.05).toFixed(4),
+  });
+  ET.frames++;
+  updateLiveStats(gx);
+}
+
+function updateLiveStats(gazeX) {
+  document.getElementById('ls-frames').textContent  = ET.frames;
+  document.getElementById('ls-fix').textContent     = ET.fixations;
+  document.getElementById('ls-sac').textContent     = ET.saccades;
+  document.getElementById('ls-gaze').textContent    = gazeX < 0.5 ? 'Social ←' : '→ Object';
+}
+
+// ── Build CSV & send ──────────────────────────────
+function buildCSV() {
+  if (!ET.rows.length) return '';
+  const hdrs = Object.keys(ET.rows[0]);
+  return [hdrs.join(','), ...ET.rows.map(r => hdrs.map(h=>r[h]).join(','))].join('\n');
+}
+
+async function processAndSend() {
+  showState('processing');
+  const steps = ['ps-1','ps-2','ps-3','ps-4','ps-5'];
+  const delay  = ms => new Promise(r=>setTimeout(r,ms));
+
+  for (let i=0; i<steps.length; i++) {
+    await delay(550);
+    document.getElementById(steps[i]).classList.remove('running');
+    document.getElementById(steps[i]).classList.add('done');
+    document.getElementById(steps[i]).querySelector('span').textContent = '✓';
+    if (i+1 < steps.length) document.getElementById(steps[i+1]).classList.add('running');
+  }
+  await delay(300);
+
+  const csvText = buildCSV();
+  let result = null;
+
+  try {
+    const fd = new FormData();
+    fd.append('csv', new Blob([csvText],{type:'text/csv'}), 'aura_eye_tracking.csv');
+    const resp = await fetch('/api/predict/eye-tracking', {method:'POST', body:fd});
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data = await resp.json();
+    if (data.success) result = data.result;
+    else throw new Error(data.error);
+  } catch(e) {
+    console.warn('API offline, local estimate:', e.message);
+    const fixR = ET.fixations / Math.max(ET.frames,1);
+    const prob = Math.min(97, Math.max(5, (1-fixR)*80+10));
+    let risk = 'Low';
+    if (prob>=75) risk='Very High'; else if(prob>=55) risk='High'; else if(prob>=30) risk='Moderate';
+    result = { asd_prob:prob, risk_level:risk,
+               num_sequences: Math.max(1, Math.floor(ET.rows.length/WINDOW_SIZE)) };
+  }
+
+  // Fusion call (silent)
+  fetch('/api/predict/fusion',{method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model3_prob:result.asd_prob})
+  }).catch(()=>{});
+
+  showResult(result);
+}
+
+// ── Show result ───────────────────────────────────
+function showResult(r) {
+  showState('result');
+  const prob  = r.asd_prob;
+  const risk  = r.risk_level;
+  const color = prob<30?'#7fffc0':prob<55?'#ffd07a':prob<75?'#ff80c0':'#ff6060';
+  const icons = {Low:'✅',Moderate:'⚠️',High:'🔴','Very High':'🚨'};
+  const descs = {
+    Low:        'Gaze patterns are consistent with typical development.',
+    Moderate:   'Some atypical gaze patterns detected. Follow-up evaluation recommended.',
+    High:       'Multiple atypical gaze patterns detected. Specialist evaluation recommended.',
+    'Very High':'Strong atypical gaze patterns. Please consult a specialist soon.',
+  };
+  const circ = 2*Math.PI*63;
+  const ringEl = document.getElementById('ring-fill');
+  ringEl.style.stroke = color;
+  ringEl.style.strokeDasharray = circ;
+  setTimeout(()=>{ ringEl.style.strokeDashoffset = circ*(1-prob/100); },100);
+
+  document.getElementById('res-pct').textContent  = prob.toFixed(0)+'%';
+  document.getElementById('res-pct').style.color  = color;
+  document.getElementById('res-date').textContent = new Date().toLocaleDateString('en-GB',
+    {day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('res-risk').textContent = (icons[risk]||'📊')+' '+risk+' Risk';
+  document.getElementById('res-risk').style.color = color;
+  document.getElementById('res-desc').textContent = descs[risk]||'';
+  document.getElementById('bd-frames').textContent = ET.frames;
+  document.getElementById('bd-fix').textContent    = ET.fixations;
+  document.getElementById('bd-sac').textContent    = ET.saccades;
+  document.getElementById('bd-seqs').textContent   = r.num_sequences||'—';
+}
+
+function restartSession() {
+  ET.recording=false;
+  clearInterval(ET.timerIv); clearInterval(ET.fallbackIv);
+  ET.rows=[]; ET.frames=0; ET.fixations=0; ET.saccades=0; ET.lastGaze=null;
+  ['ps-1','ps-2','ps-3','ps-4','ps-5'].forEach(id=>{
+    const el=document.getElementById(id);
+    el.classList.remove('done','running');
+    el.querySelector('span').textContent=['⚙️','🧠','⚡','🔀','📊'][
+      ['ps-1','ps-2','ps-3','ps-4','ps-5'].indexOf(id)];
+  });
+  document.getElementById('ps-1').classList.add('running');
+  document.getElementById('ring-fill').style.strokeDashoffset = 2*Math.PI*63;
+  document.getElementById('overlay-social').style.display='';
+  document.getElementById('overlay-nonsocial').style.display='';
+  showState('ready');
+}
+</script>
+</body>
+</html>

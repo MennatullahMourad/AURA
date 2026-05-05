@@ -1,0 +1,5 @@
+{
+  "extraPaths": ["./F_Notebooks"],
+  "pythonVersion": "3.10",
+  "typeCheckingMode": "off"
+}

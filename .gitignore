@@ -1,0 +1,9 @@
+aura/
+__pycache__/
+*.pyc
+*.pyo
+web/tmp/
+web/aura.db
+Results/
+*.pth
+*.pkl

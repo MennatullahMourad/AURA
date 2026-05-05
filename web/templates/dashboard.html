@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AURA — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Nunito:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root {
+  --purple-deep:  #1a0533;
+  --purple-dark:  #2d0a5e;
+  --purple-mid:   #4a1a8a;
+  --purple-light: #7b3fc4;
+  --gold:         #f5a623;
+  --gold-light:   #ffd07a;
+  --pink:         #e91e8c;
+  --white:        #ffffff;
+  --white-soft:   rgba(255,255,255,0.85);
+  --white-muted:  rgba(255,255,255,0.45);
+  --card-bg:      rgba(255,255,255,0.06);
+  --card-border:  rgba(255,255,255,0.12);
+  --sidebar-w:    260px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Nunito',sans-serif; background:var(--purple-deep); color:var(--white); display:flex; min-height:100vh; }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: var(--sidebar-w);
+  background: rgba(255,255,255,0.04);
+  border-right: 1px solid var(--card-border);
+  display: flex; flex-direction: column;
+  padding: 2rem 1.25rem;
+  position: fixed; top:0; left:0; height:100vh;
+  backdrop-filter: blur(10px);
+  z-index: 100;
+}
+
+.sidebar-logo {
+  display: flex; align-items: center; gap: .75rem;
+  margin-bottom: 2.5rem; padding: 0 .5rem;
+}
+.sidebar-logo .icon {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--purple-mid), var(--pink));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+}
+.sidebar-logo .name {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.4rem; font-weight: 800; color: var(--white);
+  letter-spacing: .05em;
+}
+.sidebar-logo .name span { color: var(--gold); }
+
+.nav-section-label {
+  font-size: .65rem; font-weight: 700;
+  color: var(--white-muted); letter-spacing: .2em;
+  text-transform: uppercase; padding: 0 .75rem;
+  margin-bottom: .5rem; margin-top: 1.5rem;
+}
+
+.nav-item {
+  display: flex; align-items: center; gap: .75rem;
+  padding: .75rem .75rem;
+  border-radius: 10px; cursor: pointer;
+  color: var(--white-muted); font-size: .9rem; font-weight: 500;
+  text-decoration: none;
+  transition: all .2s;
+  margin-bottom: .25rem;
+}
+.nav-item:hover { background: var(--card-bg); color: var(--white); }
+.nav-item.active {
+  background: linear-gradient(135deg, rgba(74,26,138,.6), rgba(233,30,140,.3));
+  color: var(--white);
+  border: 1px solid rgba(233,30,140,.3);
+}
+.nav-item .nav-icon { font-size: 1.1rem; width: 24px; text-align:center; }
+
+.sidebar-bottom {
+  margin-top: auto;
+  border-top: 1px solid var(--card-border);
+  padding-top: 1.25rem;
+}
+.user-card {
+  display: flex; align-items: center; gap: .75rem;
+  padding: .75rem;
+  background: var(--card-bg);
+  border-radius: 10px;
+}
+.user-avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--purple-mid), var(--pink));
+  display: flex; align-items: center; justify-content: center;
+  font-size: .9rem; flex-shrink: 0;
+}
+.user-name { font-size: .85rem; font-weight: 600; }
+.user-role { font-size: .72rem; color: var(--white-muted); }
+
+/* ── MAIN ── */
+.main {
+  margin-left: var(--sidebar-w);
+  flex: 1; padding: 2rem 2.5rem;
+  overflow-y: auto;
+}
+
+/* top bar */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 2rem;
+}
+.topbar-greeting .hello {
+  font-size: .85rem; color: var(--white-muted);
+}
+.topbar-greeting .name {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.6rem; font-weight: 700;
+}
+.topbar-greeting .name span { color: var(--gold); }
+
+.btn-new {
+  display: flex; align-items: center; gap: .5rem;
+  padding: .75rem 1.5rem;
+  background: linear-gradient(135deg, var(--purple-mid), var(--pink));
+  border: none; border-radius: 12px;
+  font-family: 'Nunito', sans-serif;
+  font-size: .9rem; font-weight: 700; color: var(--white);
+  cursor: pointer; text-decoration: none;
+  transition: all .2s;
+  box-shadow: 0 6px 20px rgba(233,30,140,.3);
+}
+.btn-new:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(233,30,140,.4); }
+
+/* child profile card */
+.child-card {
+  background: linear-gradient(135deg, rgba(74,26,138,.5), rgba(233,30,140,.2));
+  border: 1px solid rgba(233,30,140,.3);
+  border-radius: 20px;
+  padding: 1.75rem 2rem;
+  display: flex; align-items: center; gap: 2rem;
+  margin-bottom: 2rem;
+  position: relative; overflow: hidden;
+}
+.child-card::before {
+  content:''; position:absolute; top:-50px; right:-50px;
+  width:200px; height:200px; border-radius:50%;
+  background: radial-gradient(circle, rgba(233,30,140,.15), transparent);
+}
+.child-avatar {
+  width: 72px; height: 72px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--purple-mid), var(--pink));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2rem; flex-shrink: 0;
+  box-shadow: 0 0 30px rgba(233,30,140,.4);
+}
+.child-info .child-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.4rem; font-weight: 700;
+}
+.child-info .child-meta {
+  font-size: .85rem; color: var(--white-muted); margin-top: .3rem;
+}
+.child-info .child-meta span {
+  display: inline-block;
+  background: rgba(255,255,255,.1);
+  border-radius: 999px; padding: .2rem .75rem;
+  margin-right: .5rem; margin-top: .3rem;
+  font-size: .78rem;
+}
+.child-stats {
+  margin-left: auto; display: flex; gap: 2rem;
+}
+.child-stat { text-align: center; }
+.child-stat .val {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.6rem; font-weight: 700; color: var(--gold);
+}
+.child-stat .lbl { font-size: .72rem; color: var(--white-muted); text-transform: uppercase; letter-spacing: .1em; }
+
+/* stats grid */
+.stats-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 1.25rem; margin-bottom: 2rem;
+}
+.stat-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 16px; padding: 1.5rem;
+  position: relative; overflow: hidden;
+  transition: transform .2s;
+}
+.stat-card:hover { transform: translateY(-3px); }
+.stat-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:3px;
+  background: var(--accent, var(--purple-light));
+}
+.stat-card .stat-icon {
+  font-size: 1.5rem; margin-bottom: .75rem;
+}
+.stat-card .stat-val {
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem; font-weight: 700;
+  color: var(--accent, var(--white));
+}
+.stat-card .stat-lbl {
+  font-size: .75rem; color: var(--white-muted);
+  text-transform: uppercase; letter-spacing: .1em;
+  margin-top: .3rem;
+}
+
+/* content grid */
+.content-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 1.5rem; margin-bottom: 2rem;
+}
+
+.panel {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 16px; padding: 1.5rem;
+}
+.panel-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.1rem; font-weight: 700;
+  margin-bottom: 1.25rem;
+  display: flex; align-items: center; gap: .5rem;
+}
+
+/* sessions list */
+.session-item {
+  display: flex; align-items: center; gap: 1rem;
+  padding: .85rem 0;
+  border-bottom: 1px solid var(--card-border);
+}
+.session-item:last-child { border-bottom: none; }
+.session-date {
+  font-size: .75rem; color: var(--white-muted); min-width: 80px;
+}
+.session-risk {
+  flex: 1; font-size: .85rem; font-weight: 600;
+}
+.risk-badge {
+  padding: .25rem .85rem; border-radius: 999px;
+  font-size: .72rem; font-weight: 700; letter-spacing: .05em;
+}
+.risk-low      { background: rgba(0,200,100,.15); color: #7fffc0; }
+.risk-moderate { background: rgba(245,166,35,.15); color: var(--gold-light); }
+.risk-high     { background: rgba(233,30,140,.15); color: #ff80c0; }
+.risk-veryhigh { background: rgba(220,38,38,.15);  color: #ff8080; }
+
+/* quick actions */
+.actions-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+.action-btn {
+  display: flex; flex-direction: column; align-items: center;
+  gap: .5rem; padding: 1.25rem;
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--card-border);
+  border-radius: 14px; cursor: pointer;
+  text-decoration: none; color: var(--white-soft);
+  font-size: .82rem; font-weight: 600;
+  text-align: center;
+  transition: all .2s;
+}
+.action-btn:hover {
+  background: rgba(255,255,255,.08);
+  border-color: var(--purple-light);
+  transform: translateY(-2px);
+}
+.action-btn .action-icon { font-size: 1.75rem; }
+
+/* chart wrap */
+.chart-wrap { position: relative; height: 200px; }
+
+/* disclaimer */
+.disclaimer {
+  padding: 1rem 1.5rem;
+  background: rgba(245,166,35,.06);
+  border: 1px solid rgba(245,166,35,.2);
+  border-radius: 12px;
+  font-size: .78rem; color: rgba(255,208,122,.7);
+  text-align: center; line-height: 1.6;
+}
+
+/* Logout button in sidebar */
+.btn-logout {
+  display: flex; align-items: center; gap: .6rem;
+  width: 100%;
+  background: rgba(233,30,140,.1);
+  border: 1px solid rgba(233,30,140,.25);
+  border-radius: 10px;
+  padding: .65rem 1rem;
+  font-family: 'Nunito', sans-serif;
+  font-size: .82rem; font-weight: 600;
+  color: rgba(255,130,180,.9);
+  cursor: pointer; text-decoration: none;
+  transition: all .2s;
+  margin-top: .5rem;
+}
+.btn-logout:hover {
+  background: rgba(233,30,140,.2);
+  color: #fff;
+  border-color: rgba(233,30,140,.5);
+}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="icon">👁</div>
+    <div class="name">AU<span>RA</span></div>
+  </div>
+
+  <div class="nav-section-label">Main</div>
+  <a href="/dashboard" class="nav-item active">
+    <span class="nav-icon">🏠</span> Dashboard
+  </a>
+  <a href="/questionnaire" class="nav-item">
+    <span class="nav-icon">📋</span> Questionnaire
+  </a>
+  <a href="/eye-tracking" class="nav-item">
+    <span class="nav-icon">👁</span> Eye Tracking
+  </a>
+  <a href="/results" class="nav-item">
+    <span class="nav-icon">📊</span> Results
+  </a>
+
+  <div class="nav-section-label">Support</div>
+  <a href="/chatbot" class="nav-item">
+    <span class="nav-icon">🤖</span> AI Assistant
+  </a>
+
+  <div class="sidebar-bottom">
+    <div class="user-card">
+      <div class="user-avatar">👩</div>
+      <div>
+        <div class="user-name">{{ user.first_name }} {{ user.last_name }}</div>
+        <div class="user-role">Parent Account</div>
+      </div>
+    </div>
+    <a href="/logout" class="btn-logout">
+      <span>🚪</span> Log Out
+    </a>
+  </div>
+</aside>
+
+<!-- MAIN CONTENT -->
+<main class="main">
+
+  <!-- Top Bar -->
+  <div class="topbar">
+    <div class="topbar-greeting">
+      <div class="hello" id="time-greeting">Good day,</div>
+      <div class="name">Welcome back, <span>{{ user.first_name }}</span> 👋</div>
+    </div>
+    <a href="/questionnaire" class="btn-new">
+      ＋ New Assessment
+    </a>
+  </div>
+
+  <!-- Child Profile -->
+  <div class="child-card">
+    <div class="child-avatar">{{ "👦" if (user.child and user.child.gender == "male") else "👧" if user.child else "👶" }}</div>
+    <div class="child-info">
+      <div class="child-name">{{ user.child.name if user.child else "—" }}</div>
+      <div class="child-meta">
+        <span>Age: {{ user.child.age if user.child else "—" }} years</span>
+        <span>{{ user.child.gender.capitalize() if user.child else "—" }}</span>
+        <span>{{ "Q-CHAT-10" if (user.child and user.child.age < 4) else "AQ-10" }}</span>
+      </div>
+    </div>
+    <div class="child-stats">
+      <div class="child-stat">
+        <div class="val" id="stat-nsess">{{ results|length if results else 0 }}</div>
+        <div class="lbl">Sessions</div>
+      </div>
+      <div class="child-stat">
+        <div class="val" id="stat-lastrisk">{{ results[0].final_prob|round(0)|int ~ "%" if results else "—" }}</div>
+        <div class="lbl">Last Risk</div>
+      </div>
+      <div class="child-stat">
+        <div class="val" id="stat-trend">{% if results|length >= 2 %}{{ "↓" if results[0].final_prob < results[1].final_prob else "↑" }}{% else %}—{% endif %}</div>
+        <div class="lbl">Trend</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-grid">
+    <div class="stat-card" style="--accent:#7fffc0">
+      <div class="stat-icon">✅</div>
+      <div class="stat-val">{{ results|length if results else 0 }}</div>
+      <div class="stat-lbl">Total Sessions</div>
+    </div>
+    <div class="stat-card" style="--accent:var(--gold)">
+      <div class="stat-icon">📊</div>
+      <div class="stat-val">{{ results[0].final_prob|round(0)|int ~ "%" if results else "—" }}</div>
+      <div class="stat-lbl">Latest Risk Score</div>
+    </div>
+    <div class="stat-card" style="--accent:#80c0ff">
+      <div class="stat-icon">👁</div>
+      <div class="stat-val">{{ results[0].model3_seqs if (results and results[0].model3_seqs) else "—" }}</div>
+      <div class="stat-lbl">Eye Sequences</div>
+    </div>
+    <div class="stat-card" style="--accent:#ff80c0">
+      <div class="stat-icon">📅</div>
+      <div class="stat-val" id="stat-days">—</div>
+      <div class="stat-lbl">Since Last Session</div>
+    </div>
+  </div>
+
+  <!-- Content Grid -->
+  <div class="content-grid">
+
+    <!-- Progress Chart -->
+    <div class="panel">
+      <div class="panel-title">📈 Risk Score Progress</div>
+      <div class="chart-wrap">
+        <canvas id="progressChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="panel">
+      <div class="panel-title">⚡ Quick Actions</div>
+      <div class="actions-grid">
+        <a href="/questionnaire" class="action-btn">
+          <span class="action-icon">📋</span>
+          Start Questionnaire
+        </a>
+        <a href="/eye-tracking" class="action-btn">
+          <span class="action-icon">👁</span>
+          Eye Tracking Session
+        </a>
+        <a href="/results" class="action-btn">
+          <span class="action-icon">📊</span>
+          View Full Results
+        </a>
+        <a href="/chatbot" class="action-btn">
+          <span class="action-icon">🤖</span>
+          Ask AI Assistant
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Sessions History -->
+  <div class="panel" style="margin-bottom:2rem;">
+    <div class="panel-title">🗂 Session History</div>
+    {% if results %}
+      {% for r in results[:5] %}
+      <div class="session-item">
+        <div class="session-date">{{ r.date[:10] if r.date else "—" }}</div>
+        <div class="session-risk">
+          {% if r.model3_prob %}Eye Tracking + Questionnaire{% else %}Questionnaire{% endif %}
+        </div>
+        <div>
+          {% set risk = r.risk_level if r.risk_level else "—" %}
+          {% set pct  = (r.final_prob|round(0)|int ~ "%") if r.final_prob else "—" %}
+          {% if risk == "Low" %}<span class="risk-badge risk-low">Low — {{ pct }}</span>
+          {% elif risk == "Moderate" %}<span class="risk-badge risk-moderate">Moderate — {{ pct }}</span>
+          {% elif risk == "High" %}<span class="risk-badge risk-high">High — {{ pct }}</span>
+          {% else %}<span class="risk-badge risk-veryhigh">{{ risk }} — {{ pct }}</span>{% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div style="color:var(--white-muted);font-size:.85rem;padding:.75rem 0;">
+        No sessions yet. <a href="/questionnaire" style="color:var(--gold);">Start your first assessment →</a>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Disclaimer -->
+  <div class="disclaimer">
+    ⚠️ AURA is a decision-support tool — NOT a replacement for professional medical diagnosis.
+    Always consult a qualified specialist for clinical evaluation.
+  </div>
+
+</main>
+
+<!-- Jinja2 data island — VS Code لا يعلم إنه Jinja2 فمش بيشتكي -->
+<script type="application/json" id="aura-data">
+{
+  "lastDate":    "{{ results[0].date[:10] if results else '' }}",
+  "chartLabels": {{ chart_labels | tojson if chart_labels is defined else '[]' }},
+  "chartData":   {{ chart_data   | tojson if chart_data   is defined else '[]' }}
+}
+</script>
+
+<script>
+// Read data from JSON island — zero Jinja2 inside JS
+const _d          = JSON.parse(document.getElementById('aura-data').textContent);
+const chartLabels = _d.chartLabels;
+const chartData   = _d.chartData;
+
+// Dynamic time greeting
+(function(){
+  const h = new Date().getHours();
+  const greet = h < 12 ? 'Good morning,' : h < 17 ? 'Good afternoon,' : 'Good evening,';
+  const el = document.getElementById('time-greeting');
+  if (el) el.textContent = greet;
+})();
+
+// Days since last session
+(function(){
+  if (!_d.lastDate) return;
+  const last = new Date(_d.lastDate);
+  const diff = Math.floor((new Date() - last) / 86400000);
+  const el = document.getElementById('stat-days');
+  if (el) el.textContent = diff === 0 ? 'Today' : diff + 'd';
+})();
+const ctx = document.getElementById('progressChart').getContext('2d');
+new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: chartLabels.length ? chartLabels : ['No sessions yet'],
+    datasets: [{
+      label: 'Risk Score %',
+      data: chartData.length ? chartData : [0],
+      borderColor: '#e91e8c',
+      backgroundColor: (ctx) => {
+        const g = ctx.chart.ctx.createLinearGradient(0,0,0,200);
+        g.addColorStop(0,'rgba(233,30,140,0.3)');
+        g.addColorStop(1,'rgba(233,30,140,0.01)');
+        return g;
+      },
+      borderWidth: 3,
+      pointBackgroundColor: chartData.map(v =>
+        v >= 75 ? '#ff4444' : v >= 55 ? '#e91e8c' : v >= 30 ? '#f5a623' : '#7fffc0'),
+      pointRadius: 7,
+      pointHoverRadius: 10,
+      tension: 0.4,
+      fill: true,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: ctx => {
+            const v = ctx.raw;
+            const r = v >= 75 ? 'Very High' : v >= 55 ? 'High' : v >= 30 ? 'Moderate' : 'Low';
+            return ` ${v}% — ${r} Risk`;
+          }
+        }
+      }
+    },
+    scales: {
+      y: {
+        min: 0, max: 100,
+        grid: { color: 'rgba(255,255,255,0.06)' },
+        ticks: { color: 'rgba(255,255,255,0.4)', callback: v => v + '%' }
+      },
+      x: {
+        grid: { display: false },
+        ticks: { color: 'rgba(255,255,255,0.4)', maxRotation: 45 }
+      }
+    }
+  }
+});
+</script>
+</body>
+</html>

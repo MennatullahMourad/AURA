@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AURA — Results</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Nunito:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root {
+  --purple-deep:  #1a0533;
+  --purple-mid:   #4a1a8a;
+  --gold:         #f5a623;
+  --gold-light:   #ffd07a;
+  --pink:         #e91e8c;
+  --white:        #ffffff;
+  --white-soft:   rgba(255,255,255,0.85);
+  --white-muted:  rgba(255,255,255,0.45);
+  --card-bg:      rgba(255,255,255,0.06);
+  --card-border:  rgba(255,255,255,0.12);
+  --sidebar-w:    260px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Nunito',sans-serif; background:var(--purple-deep); color:var(--white); display:flex; min-height:100vh; }
+
+/* SIDEBAR */
+.sidebar { width:var(--sidebar-w); background:rgba(255,255,255,0.04); border-right:1px solid var(--card-border); display:flex; flex-direction:column; padding:2rem 1.25rem; position:fixed; top:0; left:0; height:100vh; backdrop-filter:blur(10px); z-index:100; }
+.sidebar-logo { display:flex; align-items:center; gap:.75rem; margin-bottom:2.5rem; padding:0 .5rem; }
+.sidebar-logo .icon { width:40px; height:40px; border-radius:50%; background:linear-gradient(135deg,var(--purple-mid),var(--pink)); display:flex; align-items:center; justify-content:center; font-size:1.1rem; }
+.sidebar-logo .name { font-family:'Playfair Display',serif; font-size:1.4rem; font-weight:800; }
+.sidebar-logo .name span { color:var(--gold); }
+.nav-section-label { font-size:.65rem; font-weight:700; color:var(--white-muted); letter-spacing:.2em; text-transform:uppercase; padding:0 .75rem; margin-bottom:.5rem; margin-top:1.5rem; }
+.nav-item { display:flex; align-items:center; gap:.75rem; padding:.75rem; border-radius:10px; cursor:pointer; color:var(--white-muted); font-size:.9rem; font-weight:500; text-decoration:none; transition:all .2s; margin-bottom:.25rem; }
+.nav-item:hover { background:var(--card-bg); color:var(--white); }
+.nav-item.active { background:linear-gradient(135deg,rgba(74,26,138,.6),rgba(233,30,140,.3)); color:var(--white); border:1px solid rgba(233,30,140,.3); }
+.nav-icon { font-size:1.1rem; width:24px; text-align:center; }
+.sidebar-bottom { margin-top:auto; border-top:1px solid var(--card-border); padding-top:1.25rem; }
+.user-card { display:flex; align-items:center; gap:.75rem; padding:.75rem; background:var(--card-bg); border-radius:10px; }
+.user-avatar { width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,var(--purple-mid),var(--pink)); display:flex; align-items:center; justify-content:center; font-size:.9rem; }
+.user-name { font-size:.85rem; font-weight:600; }
+.user-role { font-size:.72rem; color:var(--white-muted); }
+
+/* MAIN */
+.main { margin-left:var(--sidebar-w); flex:1; padding:2rem 2.5rem; }
+.page-header { margin-bottom:2rem; display:flex; align-items:center; justify-content:space-between; }
+.page-header h1 { font-family:'Playfair Display',serif; font-size:1.8rem; font-weight:700; }
+.page-header p { color:var(--white-muted); font-size:.9rem; margin-top:.4rem; }
+.btn-new-session { padding:.75rem 1.5rem; background:linear-gradient(135deg,var(--purple-mid),var(--pink)); border:none; border-radius:12px; font-family:'Nunito',sans-serif; font-size:.9rem; font-weight:700; color:var(--white); cursor:pointer; text-decoration:none; box-shadow:0 6px 20px rgba(233,30,140,.3); transition:all .2s; }
+.btn-new-session:hover { transform:translateY(-2px); }
+
+/* LATEST RESULT HERO */
+.result-hero {
+  background: linear-gradient(135deg, rgba(74,26,138,.4), rgba(233,30,140,.2));
+  border: 1px solid rgba(233,30,140,.3);
+  border-radius: 24px; padding: 2.5rem;
+  display: flex; align-items: center; gap: 3rem;
+  margin-bottom: 2rem;
+}
+
+/* donut ring */
+.ring-wrap { position:relative; width:160px; height:160px; flex-shrink:0; }
+.ring-wrap canvas { position:absolute; top:0; left:0; }
+.ring-center {
+  position:absolute; top:50%; left:50%;
+  transform:translate(-50%,-50%);
+  text-align:center;
+}
+.ring-pct { font-family:'JetBrains Mono',monospace; font-size:2rem; font-weight:700; color:#7fffc0; }
+.ring-lbl { font-size:.65rem; color:var(--white-muted); letter-spacing:.1em; text-transform:uppercase; }
+
+.result-details { flex:1; }
+.result-details .date { font-size:.78rem; color:var(--white-muted); margin-bottom:.5rem; }
+.result-details .risk-level { font-family:'Playfair Display',serif; font-size:1.6rem; font-weight:700; color:#7fffc0; }
+.breakdown-row { display:flex; gap:1.5rem; margin-top:1.5rem; }
+.breakdown-item { text-align:center; background:rgba(255,255,255,.05); border-radius:12px; padding:.85rem 1.25rem; min-width:100px; }
+.breakdown-val { font-family:'JetBrains Mono',monospace; font-size:1.4rem; font-weight:700; color:var(--gold); }
+.breakdown-lbl { font-size:.68rem; color:var(--white-muted); text-transform:uppercase; letter-spacing:.08em; margin-top:.3rem; }
+
+/* PROGRESS + HISTORY GRID */
+.content-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-bottom:2rem; }
+.panel { background:var(--card-bg); border:1px solid var(--card-border); border-radius:16px; padding:1.5rem; }
+.panel-title { font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:700; margin-bottom:1.25rem; }
+.chart-wrap { position:relative; height:220px; }
+
+/* session rows */
+.session-row { display:flex; align-items:center; gap:1rem; padding:.85rem 0; border-bottom:1px solid var(--card-border); }
+.session-row:last-child { border-bottom:none; }
+.session-date { font-size:.75rem; color:var(--white-muted); min-width:85px; }
+.session-bar-wrap { flex:1; }
+.session-bar { height:6px; border-radius:999px; background:rgba(255,255,255,.08); overflow:hidden; margin-bottom:.3rem; }
+.session-bar-fill { height:100%; border-radius:999px; transition:width .6s ease; }
+.session-score-lbl { font-size:.72rem; color:var(--white-muted); }
+.risk-badge { padding:.2rem .8rem; border-radius:999px; font-size:.7rem; font-weight:700; }
+.risk-low      { background:rgba(0,200,100,.15); color:#7fffc0; }
+.risk-moderate { background:rgba(245,166,35,.15); color:var(--gold-light); }
+.risk-high     { background:rgba(233,30,140,.15); color:#ff80c0; }
+
+/* MODEL BREAKDOWN */
+.models-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1.25rem; margin-bottom:2rem; }
+.model-card { background:var(--card-bg); border:1px solid var(--card-border); border-radius:16px; padding:1.5rem; text-align:center; position:relative; overflow:hidden; }
+.model-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:var(--accent,var(--purple-mid)); }
+.model-icon { font-size:2rem; margin-bottom:.75rem; }
+.model-name { font-size:.72rem; font-weight:700; color:var(--white-muted); text-transform:uppercase; letter-spacing:.1em; margin-bottom:.5rem; }
+.model-val { font-family:'JetBrains Mono',monospace; font-size:1.8rem; font-weight:700; color:var(--accent,var(--white)); }
+.model-sub { font-size:.75rem; color:var(--white-muted); margin-top:.3rem; }
+.model-weight { display:inline-block; margin-top:.75rem; background:rgba(255,255,255,.07); border-radius:999px; padding:.2rem .75rem; font-size:.72rem; color:var(--white-muted); }
+
+/* disclaimer */
+.disclaimer { padding:1rem 1.5rem; background:rgba(245,166,35,.06); border:1px solid rgba(245,166,35,.2); border-radius:12px; font-size:.78rem; color:rgba(255,208,122,.7); text-align:center; line-height:1.6; }
+
+/* Risk Progress Bar */
+.risk-progress-wrap { margin: 1.5rem 0; }
+.risk-progress-label { display: flex; justify-content: space-between;
+  font-size: .8rem; color: var(--white-muted); margin-bottom: .5rem; }
+.risk-progress-bar { height: 14px; border-radius: 999px;
+  background: rgba(255,255,255,.08); overflow: hidden; }
+.risk-progress-fill { height: 100%; border-radius: 999px;
+  transition: width 1.2s cubic-bezier(.4,0,.2,1);
+  background: linear-gradient(90deg, #7fffc0, #f5a623, #e91e8c); }
+
+
+/* Logout button in sidebar */
+.btn-logout {
+  display: flex; align-items: center; gap: .6rem;
+  width: 100%;
+  background: rgba(233,30,140,.1);
+  border: 1px solid rgba(233,30,140,.25);
+  border-radius: 10px;
+  padding: .65rem 1rem;
+  font-family: 'Nunito', sans-serif;
+  font-size: .82rem; font-weight: 600;
+  color: rgba(255,130,180,.9);
+  cursor: pointer; text-decoration: none;
+  transition: all .2s;
+  margin-top: .5rem;
+}
+.btn-logout:hover {
+  background: rgba(233,30,140,.2);
+  color: #fff;
+  border-color: rgba(233,30,140,.5);
+}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="icon">👁</div>
+    <div class="name">AU<span>RA</span></div>
+  </div>
+  <div class="nav-section-label">Main</div>
+  <a href="/dashboard" class="nav-item"><span class="nav-icon">🏠</span> Dashboard</a>
+  <a href="/questionnaire" class="nav-item"><span class="nav-icon">📋</span> Questionnaire</a>
+  <a href="/eye-tracking" class="nav-item"><span class="nav-icon">👁</span> Eye Tracking</a>
+  <a href="/results" class="nav-item active"><span class="nav-icon">📊</span> Results</a>
+  <div class="nav-section-label">Support</div>
+  <a href="/chatbot" class="nav-item"><span class="nav-icon">🤖</span> AI Assistant</a>
+  <div class="sidebar-bottom">
+    <div class="user-card">
+      <div class="user-avatar">👩</div>
+      <div><div class="user-name">Sarah Ahmed</div><div class="user-role">Parent Account</div></div>
+    </div>
+    <a href="/logout" class="btn-logout">🚪 Log Out</a>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="page-header">
+    <div>
+      <h1>📊 Assessment Results</h1>
+      <p>Full analysis of Omar's ASD risk across all sessions</p>
+    </div>
+    <a href="/questionnaire" class="btn-new-session">＋ New Session</a>
+  </div>
+
+  <!-- Latest Result -->
+  <div class="result-hero">
+    <div class="ring-wrap">
+      <canvas id="donutChart" width="160" height="160"></canvas>
+      <div class="ring-center">
+        <div class="ring-pct" id="ringPct">--</div>
+        <div class="ring-lbl">Risk</div>
+      </div>
+    </div>
+    <div class="result-details">
+      <div class="date">📅 Latest Session</div>
+      <div class="risk-level" id="riskLevel">Loading...</div>
+      
+      <!-- Risk Progress Bar -->
+      <div class="risk-progress-wrap">
+        <div class="risk-progress-label">
+          <span>Risk Score</span>
+          <span id="progressPct">0%</span>
+        </div>
+        <div class="risk-progress-bar">
+          <div class="risk-progress-fill" id="progressFill" style="width:0%"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;
+          font-size:.7rem;color:var(--white-muted);margin-top:.3rem;">
+          <span>0% Low</span>
+          <span>30% Moderate</span>
+          <span>55% High</span>
+          <span>75% Very High</span>
+        </div>
+      </div>
+      <div class="breakdown-row">
+        <div class="breakdown-item">
+          <div class="breakdown-val" id="m3Val">--</div>
+          <div class="breakdown-lbl">Eye CSV<br>Model</div>
+        </div>
+        <div class="breakdown-item">
+          <div class="breakdown-val" id="m2Val">--</div>
+          <div class="breakdown-lbl">Eye Image<br>Severity</div>
+        </div>
+        <div class="breakdown-item">
+          <div class="breakdown-val" id="m3Seqs">--</div>
+          <div class="breakdown-lbl">Eye<br>Sequences</div>
+        </div>
+        <div class="breakdown-item">
+          <div class="breakdown-val" id="qScore">--</div>
+          <div class="breakdown-lbl">Questionnaire<br>Score</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Model Breakdown -->
+  <div class="models-grid">
+    <div class="model-card" style="--accent:#7fffc0">
+      <div class="model-icon">📋</div>
+      <div class="model-name">Behavioral Model</div>
+      <div class="model-val" id="m1Val">--</div>
+      <div class="model-sub">Questionnaire Score</div>
+      <div class="model-weight">Weight: 40%</div>
+    </div>
+    <div class="model-card" style="--accent:var(--gold)">
+      <div class="model-icon">🖼</div>
+      <div class="model-name">Eye Image Model</div>
+      <div class="model-val" id="m2Severity">--</div>
+      <div class="model-sub">CNN + Transformer</div>
+      <div class="model-weight">Weight: 20%</div>
+    </div>
+    <div class="model-card" style="--accent:#80c0ff">
+      <div class="model-icon">👁</div>
+      <div class="model-name">Eye Tracking Model</div>
+      <div class="model-val" id="m3ValCard">--</div>
+      <div class="model-sub">CSV Transformer</div>
+      <div class="model-weight">Weight: 40%</div>
+    </div>
+  </div>
+
+  <!-- Progress + History -->
+  <div class="content-grid">
+    <div class="panel">
+      <div class="panel-title">📈 Progress Over Time</div>
+      <div class="chart-wrap">
+        <canvas id="progressChart"></canvas>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">🗂 Session History</div>
+
+      <div class="session-row">
+        <div class="session-date">Mar 11, 2026</div>
+        <div class="session-bar-wrap">
+          <div class="session-bar"><div class="session-bar-fill" style="width:22%;background:#7fffc0"></div></div>
+          <div class="session-score-lbl">22% — Low Risk</div>
+        </div>
+        <span class="risk-badge risk-low">Low</span>
+      </div>
+
+      <div class="session-row">
+        <div class="session-date">Mar 4, 2026</div>
+        <div class="session-bar-wrap">
+          <div class="session-bar"><div class="session-bar-fill" style="width:38%;background:var(--gold)"></div></div>
+          <div class="session-score-lbl">38% — Moderate Risk</div>
+        </div>
+        <span class="risk-badge risk-moderate">Moderate</span>
+      </div>
+
+      <div class="session-row">
+        <div class="session-date">Feb 25, 2026</div>
+        <div class="session-bar-wrap">
+          <div class="session-bar"><div class="session-bar-fill" style="width:45%;background:var(--gold)"></div></div>
+          <div class="session-score-lbl">45% — Moderate Risk</div>
+        </div>
+        <span class="risk-badge risk-moderate">Moderate</span>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="disclaimer">
+    ⚠️ AURA is a decision-support tool — NOT a replacement for professional medical diagnosis.
+    Always consult a qualified specialist for clinical evaluation.
+  </div>
+</main>
+
+<script>
+// ── جيب النتائج من الـ Flask session ──────────────────────
+async function loadResults() {
+  try {
+    const resp = await fetch('/api/session-info');
+    const data = await resp.json();
+    const db = (data.all_results || [])[0] || null;
+
+    if (!db) {
+      document.getElementById('riskLevel').textContent = 'No sessions yet';
+      document.getElementById('riskLevel').style.color = 'rgba(255,255,255,0.4)';
+      return;
+    }
+
+    const prob  = db.final_prob || 0;
+    const risk  = db.risk_level || '--';
+    const m1p   = db.model1_prob || 0;
+    const m2sev = db.model2_severity || '--';
+    const m3p   = db.model3_prob;
+    const m3s   = db.model3_seqs || '--';
+
+    updateDonut(prob);
+
+    // Progress bar
+    const fill = document.getElementById('progressFill');
+    const pct  = document.getElementById('progressPct');
+    if (fill) fill.style.width = Math.min(prob, 100) + '%';
+    if (pct)  pct.textContent  = prob.toFixed(1) + '%';
+
+    // Ring + Risk
+    const ringEl = document.getElementById('ringPct');
+    const riskEl = document.getElementById('riskLevel');
+    if (ringEl) ringEl.textContent = prob.toFixed(1) + '%';
+    if (riskEl) {
+      riskEl.textContent = getRiskIcon(risk) + ' ' + risk + ' Risk';
+      riskEl.style.color = getRiskColor(risk);
+    }
+
+    // Breakdown
+    const m3v = document.getElementById('m3Val');
+    const m2v = document.getElementById('m2Val');
+    const m3sv = document.getElementById('m3Seqs');
+    const qsc = document.getElementById('qScore');
+    if (m3v)  m3v.textContent  = m3p != null ? m3p.toFixed(1) + '%' : '--';
+    if (m2v)  m2v.textContent  = m2sev;
+    if (m3sv) m3sv.textContent = m3s;
+    if (qsc)  qsc.textContent  = m1p > 0 ? m1p.toFixed(1) + '%' : '--';
+
+    // Model cards
+    const m1c = document.getElementById('m1Val');
+    const m2c = document.getElementById('m2Severity');
+    const m3c = document.getElementById('m3ValCard');
+    if (m1c) m1c.textContent = m1p > 0 ? m1p.toFixed(1) + '%' : '--';
+    if (m2c) m2c.textContent = m2sev;
+    if (m3c) m3c.textContent = m3p != null ? m3p.toFixed(1) + '%' : '--';
+
+  } catch(e) {
+    console.error('loadResults:', e);
+  }
+}
+
+// Update all dynamic IDs from session data
+
+// PDF Report Generator
+
+
+
+function getRiskColor(risk) {
+  const map = {'Low':'#7fffc0','Moderate':'#ffd07a','High':'#ff80c0','Very High':'#ff6060'};
+  return map[risk] || '#ffffff';
+}
+function getRiskIcon(risk) {
+  const map = {'Low':'✅','Moderate':'⚠️','High':'🔴','Very High':'🚨'};
+  return map[risk] || '📊';
+}
+
+// Donut chart
+let donutChart;
+function updateDonut(pct) {
+  if (donutChart) donutChart.destroy();
+  const color = pct < 30 ? '#7fffc0' : pct < 55 ? '#ffd07a' : pct < 75 ? '#ff80c0' : '#ff6060';
+  const dCtx = document.getElementById('donutChart').getContext('2d');
+  donutChart = new Chart(dCtx, {
+    type: 'doughnut',
+    data: {
+      datasets: [{
+        data: [pct, 100-pct],
+        backgroundColor: [color, 'rgba(255,255,255,0.06)'],
+        borderWidth: 0,
+      }]
+    },
+    options: {
+      cutout: '75%',
+      plugins: { legend:{display:false}, tooltip:{enabled:false} },
+      animation: { animateRotate:true, duration:1000 }
+    }
+  });
+  document.querySelector('.ring-pct').style.color = color;
+}
+
+// Progress chart
+const pCtx = document.getElementById('progressChart').getContext('2d');
+new Chart(pCtx, {
+  type: 'line',
+  data: {
+    labels: ['Feb 25', 'Mar 4', 'Mar 11'],
+    datasets: [{
+      label: 'Risk %',
+      data: [45, 38, 22],
+      borderColor: '#e91e8c',
+      backgroundColor: 'rgba(233,30,140,0.08)',
+      borderWidth: 3,
+      pointBackgroundColor: '#f5a623',
+      pointRadius: 7,
+      tension: 0.4, fill: true,
+    }]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:false} },
+    scales:{
+      y:{ min:0, max:100, grid:{color:'rgba(255,255,255,.05)'}, ticks:{color:'rgba(255,255,255,.4)', callback:v=>v+'%'} },
+      x:{ grid:{display:false}, ticks:{color:'rgba(255,255,255,.4)'} }
+    }
+  }
+});
+
+// تحميل النتايج لما الصفحة تفتح
+updateDonut(22);
+loadResults();
+</script>
+</body>
+</html>
